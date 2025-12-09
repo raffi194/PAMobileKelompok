@@ -130,7 +130,6 @@ class MainActivity : ComponentActivity() {
 }
 
 // --- KOMPONEN HOME SCREEN (MENU) ---
-// Bisa dipindah ke file ui/HomeScreen.kt jika ingin lebih rapi
 @Composable
 fun HomeScreen(onNavigateToFeature: (String) -> Unit, onLogout: () -> Unit) {
     val scope = rememberCoroutineScope()

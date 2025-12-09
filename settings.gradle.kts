@@ -17,8 +17,8 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
+    // HAPUS BLOK versionCatalogs DARI SINI
 }
 
 rootProject.name = "PAMobileKelompok"
 include(":app")
- 
