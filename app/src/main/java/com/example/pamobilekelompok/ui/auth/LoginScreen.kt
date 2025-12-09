@@ -1,4 +1,4 @@
-package com.example.pamobilekelompok.ui
+package com.example.pamobilekelompok.ui.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -13,11 +13,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pamobilekelompok.viewmodel.AuthViewModel
 
 @Composable
-fun AuthScreen(
+fun LoginScreen(
     authViewModel: AuthViewModel = viewModel(),
-    isRegister: Boolean = false,
     onNavigateSuccess: () -> Unit,
-    onNavigateToOtherScreen: () -> Unit
+    onNavigateToRegister: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -31,13 +30,14 @@ fun AuthScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = if (isRegister) "Daftar Akun Baru" else "Selamat Datang",
+            text = "Selamat Datang",
             fontSize = 24.sp,
             style = MaterialTheme.typography.headlineMedium
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Input Email
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -48,6 +48,7 @@ fun AuthScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Input Password
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -59,38 +60,33 @@ fun AuthScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Tampilkan Pesan Error Login
         authViewModel.errorMessage?.let {
             Text(text = it, color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
+        // Tombol Login
         if (authViewModel.isLoading) {
             CircularProgressIndicator()
         } else {
             Button(
                 onClick = {
                     if (email.isNotEmpty() && password.isNotEmpty()) {
-                        if (isRegister) {
-                            authViewModel.register(email, password, context) {
-                                onNavigateToOtherScreen()
-                            }
-                        } else {
-                            authViewModel.login(email, password, context, onNavigateSuccess)
-                        }
+                        authViewModel.login(email, password, context, onNavigateSuccess)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = if (isRegister) "Daftar Sekarang" else "Masuk")
+                Text(text = "Masuk")
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TextButton(onClick = onNavigateToOtherScreen) {
-            Text(
-                text = if (isRegister) "Sudah punya akun? Login" else "Belum punya akun? Daftar"
-            )
+        // Tombol Pindah ke Register
+        TextButton(onClick = onNavigateToRegister) {
+            Text(text = "Belum punya akun? Daftar")
         }
     }
 }
