@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,98 +28,72 @@ fun DestinationDetailScreen(
     name: String,
     description: String,
     imageUrl: String?,
+    price: Long, // Parameter Harga
+    isAdmin: Boolean = false,
     onNavigateBack: () -> Unit,
-    onNavigateToWriteReview: () -> Unit // Callback ke halaman tulis ulasan
+    onNavigateToWriteReview: () -> Unit,
+    onNavigateToBooking: () -> Unit
 ) {
-    // State untuk Tab (0 = Informasi, 1 = Ulasan)
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Informasi", "Ulasan")
-
-    // Mock Data Ulasan (Hanya UI, tidak masuk database)
     val mockReviews = listOf(
-        ReviewMock("Budi Santoso", "Tempatnya sangat indah dan sejuk!", 5),
-        ReviewMock("Siti Aminah", "Akses jalan lumayan mudah, tapi parkir penuh.", 4),
-        ReviewMock("Rudi Hartono", "Makanan di sekitar sini enak-enak.", 5),
-        ReviewMock("Dewi Lestari", "Cocok untuk liburan keluarga.", 5),
-        ReviewMock("Andi Saputra", "Pemandangan bagus, tapi toilet kurang bersih.", 3)
+        ReviewMock("Budi", "Tempatnya indah!", 5),
+        ReviewMock("Siti", "Akses mudah.", 4)
     )
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(name, maxLines = 1) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
+                navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.Default.ArrowBack, "Kembali") } }
+            )
+        },
+        bottomBar = {
+            if (!isAdmin) {
+                BottomAppBar(containerColor = MaterialTheme.colorScheme.surface, contentPadding = PaddingValues(16.dp)) {
+                    Button(onClick = onNavigateToBooking, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+                        Text("Pesan Tiket Sekarang", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-            )
+            }
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-        ) {
-            // 1. Gambar Utama
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp),
-                contentScale = ContentScale.Crop
-            )
-
-            // 2. Tab Row (Menu)
+        Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            AsyncImage(model = imageUrl, contentDescription = name, modifier = Modifier.fillMaxWidth().height(250.dp), contentScale = ContentScale.Crop)
             TabRow(selectedTabIndex = selectedTabIndex) {
                 tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
-                        text = { Text(title) }
-                    )
+                    Tab(selected = selectedTabIndex == index, onClick = { selectedTabIndex = index }, text = { Text(title) })
                 }
             }
-
-            // 3. Konten Tab
             Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 when (selectedTabIndex) {
-                    0 -> { // TAB INFORMASI
+                    0 -> {
                         Column {
-                            Text(
-                                text = "Deskripsi",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text("Deskripsi", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
+                            Text(description, style = MaterialTheme.typography.bodyLarge, lineHeight = 24.sp)
+
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Divider()
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Info Harga
+                            Text("Harga Tiket", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Text(
-                                text = description,
-                                style = MaterialTheme.typography.bodyLarge,
-                                lineHeight = 24.sp
+                                text = formatRupiah(price),
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
-                    1 -> { // TAB ULASAN
+                    1 -> {
                         Column(modifier = Modifier.fillMaxSize()) {
-                            // Tombol Beri Ulasan
-                            Button(
-                                onClick = onNavigateToWriteReview,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Tulis Ulasan Anda")
+                            if (!isAdmin) {
+                                Button(onClick = onNavigateToWriteReview, modifier = Modifier.fillMaxWidth()) { Text("Tulis Ulasan Anda") }
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // List Ulasan Orang Lain
-                            LazyColumn(
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(mockReviews) { review ->
-                                    ReviewItem(review)
-                                }
-                            }
+                            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) { items(mockReviews) { review -> ReviewItem(review) } }
                         }
                     }
                 }
@@ -126,48 +102,29 @@ fun DestinationDetailScreen(
     }
 }
 
-// Komponen Item Ulasan
 @Composable
 fun ReviewItem(review: ReviewMock) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Avatar Bulat (Inisial Nama)
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = review.username.first().toString(),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
+                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
+                    Text(review.username.first().toString(), color = Color.White, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(text = review.username, style = MaterialTheme.typography.titleSmall)
-                    Row {
-                        repeat(5) { index ->
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = if (index < review.rating) Color(0xFFFFD700) else Color.Gray,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
+                    Text(review.username, style = MaterialTheme.typography.titleSmall)
+                    Row { repeat(5) { index -> Icon(Icons.Default.Star, null, tint = if (index < review.rating) Color(0xFFFFD700) else Color.Gray, modifier = Modifier.size(16.dp)) } }
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = review.comment, style = MaterialTheme.typography.bodyMedium)
+            Text(review.comment, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
 
-// Data Class Sederhana untuk Mockup
 data class ReviewMock(val username: String, val comment: String, val rating: Int)
+
+fun formatRupiah(number: Long): String {
+    val format = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+    return format.format(number).replace("Rp", "Rp ")
+}
