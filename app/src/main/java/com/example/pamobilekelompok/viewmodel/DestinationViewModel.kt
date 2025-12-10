@@ -153,6 +153,7 @@ class DestinationViewModel : ViewModel() {
                 SupabaseClient.client.from("destinations").update(updatedDest) {
                     filter { eq("id", id) }
                 }
+                getDestinations()
 
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Data Berhasil Diupdate!", Toast.LENGTH_SHORT).show()

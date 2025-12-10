@@ -38,6 +38,7 @@ fun DestinationScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDetail: (Destination) -> Unit
 ) {
+    // State Form
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var priceInput by remember { mutableStateOf("") }
@@ -153,7 +154,7 @@ fun DestinationScreen(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !viewModel.isLoading
                         ) {
-                            Text(if (selectedImageUri == null) "Pilih Foto" else "Ganti Foto")
+                            Text(if (selectedImageUri == null) "Pilih Foto Baru" else "Ganti Foto")
                         }
                         if (selectedImageUri != null) {
                             Spacer(modifier = Modifier.height(8.dp))
