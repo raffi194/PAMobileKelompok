@@ -1,4 +1,3 @@
-// PAMobileKelompok/app/src/main/java/com/example/pamobilekelompok/viewmodel/ReviewViewModel.kt
 package com.example.pamobilekelompok.viewmodel
 
 import android.content.Context
@@ -10,129 +9,99 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pamobilekelompok.data.SupabaseClient
-import com.example.pamobilekelompok.data.model.Review
+import com.example.pamobilekelompok.model.Review
 import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.UUID
 
 class ReviewViewModel : ViewModel() {
 
-    // State untuk List Review
-    var reviewList by mutableStateOf<List<Review>>(emptyList())
-        private set
-
-    // State untuk Loading dan Error
+    var reviews by mutableStateOf<List<Review>>(emptyList())
     var isLoading by mutableStateOf(false)
-        private set
     var errorMessage by mutableStateOf<String?>(null)
-        private set
 
-    init {
-        fetchReviews()
-    }
-
-    // --- READ OPERATION ---
-    fun fetchReviews() {
+    // --- AMBIL SEMUA REVIEW BERDASARKAN DESTINASI ---
+    fun getReviewsByDestination(destinationName: String) {
         viewModelScope.launch {
-            isLoading = true
-            errorMessage = null
             try {
-                // Ambil data dari tabel reviews, diurutkan berdasarkan created_at terbaru
-                val response = SupabaseClient.client.postgrest["reviews"]
+                isLoading = true
+                errorMessage = null
+                val result = SupabaseClient.client.from("reviews")
                     .select {
+                        filter {
+                            eq("destination_name", destinationName)
+                        }
                         order("created_at", Order.DESCENDING)
-                    }
-
-                reviewList = response.decodeList<Review>()
-
+                    }.decodeList<Review>()
+                reviews = result
             } catch (e: Exception) {
-                errorMessage = "Gagal memuat review: ${e.message}"
+                errorMessage = "Gagal memuat ulasan: ${e.message}"
             } finally {
                 isLoading = false
             }
         }
     }
 
-    // --- INSERT OPERATION (with optional image upload) ---
-    fun insertReview(
-        placeName: String,
-        comment: String,
+    // --- TAMBAH REVIEW BARU (DENGAN FOTO OPSIONAL) ---
+    fun addReview(
+        destinationName: String,
         rating: Int,
+        comment: String,
         imageUri: Uri?,
         context: Context,
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
-            isLoading = true
-            errorMessage = null
-
-            val currentUser = SupabaseClient.client.auth.currentUserOrNull()
-            if (currentUser == null) {
-                errorMessage = "Anda harus login untuk memberi review."
-                isLoading = false
-                return@launch
-            }
-
-            var imageUrl: String? = null
-
-            // 1. UPLOAD IMAGE ke Supabase Storage (Jika ada)
-            if (imageUri != null) {
-                try {
-                    // Buat nama file unik dan tentukan bucket 'reviews'
-                    val filename = "review_image_${UUID.randomUUID()}.jpg"
-                    val bucket = SupabaseClient.client.storage["reviews"]
-
-                    // Mendapatkan ByteArray dari Uri file lokal
-                    val imageByteArray = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(imageUri)?.use { it.readBytes() }
-                    }
-
-                    if (imageByteArray == null) {
-                        errorMessage = "Gagal membaca file gambar."
-                        isLoading = false
-                        return@launch
-                    }
-
-                    // Upload file
-                    bucket.upload(
-                        path = filename,
-                        data = imageByteArray,
-                        upsert = false
-                    )
-
-                    // Dapatkan URL publik
-                    imageUrl = bucket.publicUrl(filename)
-
-                } catch (e: Exception) {
-                    errorMessage = "Gagal upload foto: ${e.message}"
-                    isLoading = false
-                    return@launch
-                }
-            }
-
-            // 2. INSERT DATA ke Supabase DB
             try {
+                isLoading = true
+
+                // Ambil User ID dari Session
+                val userId = SupabaseClient.client.auth.currentUserOrNull()?.id
+                    ?: throw Exception("User belum login")
+
+                var imageUrl: String? = null
+
+                // Upload Foto (Jika Ada)
+                if (imageUri != null) {
+                    val inputStream = context.contentResolver.openInputStream(imageUri)
+                    val bytes = inputStream?.readBytes()
+                    inputStream?.close()
+
+                    if (bytes != null) {
+                        val fileName = "review_${System.currentTimeMillis()}.jpg"
+                        val bucket = SupabaseClient.client.storage.from("reviews")
+                        bucket.upload(fileName, bytes)
+                        imageUrl = bucket.publicUrl(fileName)
+                    }
+                }
+
+                // Insert ke Database
                 val newReview = Review(
-                    userEmail = currentUser.email ?: "Unknown User",
-                    placeName = placeName,
-                    comment = comment,
+                    userId = userId,
+                    destinationName = destinationName,
                     rating = rating,
+                    comment = comment,
                     imageUrl = imageUrl
                 )
 
-                SupabaseClient.client.postgrest["reviews"].insert(newReview)
+                SupabaseClient.client.from("reviews").insert(newReview)
 
-                Toast.makeText(context, "Review berhasil diunggah!", Toast.LENGTH_SHORT).show()
-                fetchReviews() // Refresh list setelah insert
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Ulasan berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
+                }
+
+                // Refresh data
+                getReviewsByDestination(destinationName)
                 onSuccess()
 
             } catch (e: Exception) {
-                errorMessage = "Gagal menyimpan review: ${e.message}"
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Gagal menambah ulasan: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             } finally {
                 isLoading = false
             }

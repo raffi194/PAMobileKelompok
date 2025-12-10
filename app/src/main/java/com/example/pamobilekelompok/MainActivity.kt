@@ -1,37 +1,35 @@
 package com.example.pamobilekelompok
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.pamobilekelompok.data.SupabaseClient
-import com.example.pamobilekelompok.ui.AuthScreen
+import com.example.pamobilekelompok.ui.HomeScreen
+import com.example.pamobilekelompok.ui.ProfileScreen
+import com.example.pamobilekelompok.ui.auth.LoginScreen
+import com.example.pamobilekelompok.ui.auth.RegisterScreen
+import com.example.pamobilekelompok.ui.destinations.DestinationDetailScreen
+import com.example.pamobilekelompok.ui.destinations.DestinationScreen
+import com.example.pamobilekelompok.ui.reviews.ReviewScreen
 import com.example.pamobilekelompok.ui.theme.PAMobileKelompokTheme
+import com.example.pamobilekelompok.viewmodel.AuthViewModel
+import com.example.pamobilekelompok.viewmodel.ReviewViewModel
 import io.github.jan.supabase.auth.auth
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,131 +37,168 @@ class MainActivity : ComponentActivity() {
         setContent {
             PAMobileKelompokTheme {
                 val navController = rememberNavController()
-
-                // State untuk menentukan halaman awal (Login atau Home)
-                // Bernilai null saat aplikasi baru dibuka (sedang loading cek sesi)
                 var startDestination by remember { mutableStateOf<String?>(null) }
 
-                // 1. CEK SESI (AUTO LOGIN)
-                // Efek ini jalan sekali saat aplikasi dibuka
+                // Instance AuthViewModel di level Activity agar datanya awet
+                val authViewModel: AuthViewModel = viewModel()
+
                 LaunchedEffect(Unit) {
+                    SupabaseClient.client.auth.awaitInitialization()
                     val session = SupabaseClient.client.auth.currentSessionOrNull()
                     if (session != null) {
-                        startDestination = "home" // User sudah login -> ke Home
+                        startDestination = "home"
+                        authViewModel.getCurrentUser() // Load data user & role saat aplikasi mulai
                     } else {
-                        startDestination = "login" // Belum login -> ke Login
+                        startDestination = "login"
                     }
                 }
 
-                // Tampilkan Loading selagi mengecek sesi
                 if (startDestination == null) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 } else {
-                    // Struktur Navigasi Utama
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         NavHost(
                             navController = navController,
                             startDestination = startDestination!!,
                             modifier = Modifier.padding(innerPadding)
                         ) {
-                            // --- HALAMAN LOGIN ---
+                            // ===== AUTH ROUTES =====
                             composable("login") {
-                                AuthScreen(
-                                    isRegister = false, // Mode Login
+                                LoginScreen(
+                                    authViewModel = authViewModel,
                                     onNavigateSuccess = {
                                         navController.navigate("home") {
                                             popUpTo("login") { inclusive = true }
                                         }
+                                        authViewModel.getCurrentUser() // Refresh data setelah login
                                     },
-                                    onNavigateToOtherScreen = {
-                                        navController.navigate("register")
-                                    }
+                                    onNavigateToRegister = { navController.navigate("register") }
                                 )
                             }
 
-                            // --- HALAMAN REGISTER ---
                             composable("register") {
-                                AuthScreen(
-                                    isRegister = true, // Mode Register
-                                    onNavigateSuccess = {
-                                        // Opsional: Langsung masuk atau minta login ulang
-                                    },
-                                    onNavigateToOtherScreen = {
-                                        navController.popBackStack() // Kembali ke Login
-                                    }
+                                RegisterScreen(
+                                    onNavigateToLogin = { navController.popBackStack() }
                                 )
                             }
 
-                            // --- HALAMAN HOME (MENU UTAMA) ---
+                            // ===== HOME ROUTE =====
                             composable("home") {
                                 HomeScreen(
-                                    onNavigateToFeature = { route ->
-                                        navController.navigate(route)
-                                    },
-                                    onLogout = {
+                                    authViewModel = authViewModel,
+                                    onNavigateToFeature = { route -> navController.navigate(route) },
+                                    onNavigateToProfile = { navController.navigate("profile") }
+                                )
+                            }
+
+                            // ===== PROFILE ROUTE =====
+                            composable("profile") {
+                                ProfileScreen(
+                                    authViewModel = authViewModel,
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onLogoutSuccess = {
                                         navController.navigate("login") {
-                                            popUpTo("home") { inclusive = true }
+                                            popUpTo(0) { inclusive = true }
                                         }
                                     }
                                 )
                             }
 
-                            // --- NAVIGATION PLACEHOLDER UNTUK ANGGOTA KELOMPOK ---
-                            // Nanti diganti dengan Screen masing-masing individu
-                            composable("destinations") { Text("Halaman Destinasi (Individu 1)") }
-                            composable("foods") { Text("Halaman Kuliner (Individu 2)") }
-                            composable("events") { Text("Halaman Event (Individu 3)") }
-                            composable("hotels") { Text("Halaman Penginapan (Individu 4)") }
-                            composable("reviews") { Text("Halaman Review (Individu 5)") }
-                            composable("trips") { Text("Halaman Trip (Individu 6)") }
+                            // ===== DESTINATION ROUTES =====
+                            composable("destinations") {
+                                DestinationScreen(
+                                    isAdmin = authViewModel.isAdmin, // Kirim status admin
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onNavigateToDetail = { destination ->
+                                        val encodedUrl = Uri.encode(destination.imageUrl ?: "")
+                                        val encodedDesc = Uri.encode(destination.description ?: "")
+                                        navController.navigate("destination_detail/${destination.name}/$encodedDesc/$encodedUrl")
+                                    }
+                                )
+                            }
+
+                            composable(
+                                route = "destination_detail/{name}/{desc}/{url}",
+                                arguments = listOf(
+                                    navArgument("name") { type = NavType.StringType },
+                                    navArgument("desc") { type = NavType.StringType },
+                                    navArgument("url") { type = NavType.StringType }
+                                )
+                            ) { backStackEntry ->
+                                val name = backStackEntry.arguments?.getString("name") ?: ""
+                                val desc = backStackEntry.arguments?.getString("desc") ?: ""
+                                val url = backStackEntry.arguments?.getString("url") ?: ""
+
+                                // Instance ReviewViewModel untuk screen ini
+                                val reviewViewModel: ReviewViewModel = viewModel()
+
+                                DestinationDetailScreen(
+                                    name = name,
+                                    description = desc,
+                                    imageUrl = url,
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onNavigateToWriteReview = {
+                                        navController.navigate("review/$name")
+                                    },
+                                    reviewViewModel = reviewViewModel
+                                )
+                            }
+
+                            // ===== REVIEW ROUTE =====
+                            composable(
+                                route = "review/{name}",
+                                arguments = listOf(
+                                    navArgument("name") { type = NavType.StringType }
+                                )
+                            ) { backStackEntry ->
+                                val name = backStackEntry.arguments?.getString("name") ?: ""
+
+                                // Instance ReviewViewModel untuk form review
+                                val reviewViewModel: ReviewViewModel = viewModel()
+
+                                ReviewScreen(
+                                    destinationName = name,
+                                    onNavigateBack = { navController.popBackStack() },
+                                    viewModel = reviewViewModel
+                                )
+                            }
+
+                            // ===== PLACEHOLDER ROUTES (Untuk Fitur Lain) =====
+                            composable("foods") {
+                                // TODO: Implementasi FoodScreen
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    androidx.compose.material3.Text("Fitur Kuliner (Coming Soon)")
+                                }
+                            }
+
+                            composable("hotels") {
+                                // TODO: Implementasi HotelScreen
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    androidx.compose.material3.Text("Fitur Penginapan (Coming Soon)")
+                                }
+                            }
+
+                            composable("trips") {
+                                // TODO: Implementasi TripScreen
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    androidx.compose.material3.Text("Galeri Perjalanan (Coming Soon)")
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
-    }
-}
-
-// --- KOMPONEN HOME SCREEN (MENU) ---
-@Composable
-fun HomeScreen(onNavigateToFeature: (String) -> Unit, onLogout: () -> Unit) {
-    val scope = rememberCoroutineScope()
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Menu Utama Pariwisata")
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Tombol Navigasi ke Fitur Individu
-        Button(onClick = { onNavigateToFeature("destinations") }) { Text("1. Destinasi") }
-        Button(onClick = { onNavigateToFeature("foods") }) { Text("2. Kuliner") }
-        Button(onClick = { onNavigateToFeature("events") }) { Text("3. Event") }
-        Button(onClick = { onNavigateToFeature("hotels") }) { Text("4. Penginapan") }
-        Button(onClick = { onNavigateToFeature("reviews") }) { Text("5. Review") }
-        Button(onClick = { onNavigateToFeature("trips") }) { Text("6. Trip Docs") }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Tombol Logout
-        Button(onClick = {
-            scope.launch {
-                try {
-                    SupabaseClient.client.auth.signOut() // Logout dari Supabase
-                    onLogout() // Pindah ke halaman Login
-                } catch (e: Exception) {
-                    // Handle error jika logout gagal (jarang terjadi)
-                }
-            }
-        }) {
-            Text("Logout")
         }
     }
 }

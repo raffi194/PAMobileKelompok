@@ -1,8 +1,10 @@
+// C:/Users/Chesya/AndroidStudioProjects/PAMobileKelompok/app/build.gradle.kts
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.serialization) // Jangan lupa ini!
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -49,15 +51,26 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // --- SUPABASE & TOOLS ---
-    implementation(libs.supabase.postgrest)
-    implementation(libs.supabase.storage)
-    implementation(libs.supabase.auth)
-    implementation(libs.ktor.client)
+    // --- SUPABASE DEPENDENCIES (Hanya gunakan blok ini) ---
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.0.2"))
+    implementation("io.github.jan-tennert.supabase:core-kt")
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.github.jan-tennert.supabase:storage-kt")
+    implementation("io.ktor:ktor-client-android") // Client untuk Supabase
+
+    // --- DEPENDENSI LAINNYA ---
     implementation(libs.coil.compose)
     implementation(libs.navigation.compose)
     implementation(libs.kotlinx.serialization)
 
+    // HAPUS BLOK DI BAWAH INI KARENA DUPLIKAT
+    // implementation(libs.supabase.postgrest)
+    // implementation(libs.supabase.storage)
+    // implementation(libs.supabase.auth)
+    // implementation(libs.ktor.client)
+
+    // --- Dependensi untuk Testing ---
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

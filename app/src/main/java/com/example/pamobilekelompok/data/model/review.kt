@@ -1,25 +1,15 @@
-// PAMobileKelompok/app/src/main/java/com/example/pamobilekelompok/data/model/Review.kt
-package com.example.pamobilekelompok.data.model
+package com.example.pamobilekelompok.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import io.github.jan.supabase.postgrest.annotations.PostgrestSerialName
-import io.github.jan.supabase.postgrest.annotations.ColumnName
 
 @Serializable
-@PostgrestSerialName("reviews") // Nama tabel di Supabase
 data class Review(
-    @ColumnName("id")
-    val id: Long = 0,
-    @ColumnName("user_email")
-    val userEmail: String,
-    @ColumnName("place_name")
-    val placeName: String, // Nama tempat yang direview
-    @ColumnName("comment")
+    val id: Long? = null,
+    @SerialName("user_id") val userId: String,
+    @SerialName("destination_name") val destinationName: String,
+    val rating: Int, // 1-5
     val comment: String,
-    @ColumnName("rating")
-    val rating: Int,
-    @ColumnName("image_url")
-    val imageUrl: String? = null, // URL foto dari Storage (opsional)
-    @ColumnName("created_at")
-    val createdAt: String? = null // Supabase harusnya mengisi ini otomatis
+    @SerialName("image_url") val imageUrl: String? = null, // Optional
+    @SerialName("created_at") val createdAt: String? = null
 )
