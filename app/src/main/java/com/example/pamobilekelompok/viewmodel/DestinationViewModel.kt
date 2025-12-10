@@ -2,7 +2,7 @@ package com.example.pamobilekelompok.viewmodel
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log // Import Log
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,84 +25,142 @@ class DestinationViewModel : ViewModel() {
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
-    // Fungsi mengambil data
+    // --- AMBIL DATA ---
     fun getDestinations() {
         viewModelScope.launch {
             try {
                 isLoading = true
                 errorMessage = null
-
-                Log.d("Supabase", "Sedang mengambil data destinasi...")
-
-                // Ambil data, urutkan dari ID terbesar (terbaru)
-                // Jika error 'created_at' tidak ditemukan, ganti "created_at" menjadi "id"
                 val result = SupabaseClient.client.from("destinations")
                     .select {
                         order("id", Order.DESCENDING)
                     }.decodeList<Destination>()
-
                 destinations = result
-                Log.d("Supabase", "Berhasil! Jumlah data: ${result.size}")
-
             } catch (e: Exception) {
                 errorMessage = "Gagal memuat: ${e.message}"
-                Log.e("Supabase", "Error Fetch: ${e.message}")
-                e.printStackTrace()
             } finally {
                 isLoading = false
             }
         }
     }
 
-    // Fungsi Upload
-    fun uploadDestination(
+    // --- TAMBAH DATA BARU ---
+    fun uploadDestination(name: String, description: String, imageUri: Uri, context: Context, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                isLoading = true
+                val inputStream = context.contentResolver.openInputStream(imageUri)
+                val bytes = inputStream?.readBytes()
+                inputStream?.close()
+
+                if (bytes == null) throw Exception("Gagal baca file")
+
+                val fileName = "dest_${System.currentTimeMillis()}.jpg"
+                val bucket = SupabaseClient.client.storage.from("destinations")
+                bucket.upload(fileName, bytes)
+                val publicUrl = bucket.publicUrl(fileName)
+
+                val newDest = Destination(name = name, description = description, imageUrl = publicUrl)
+                SupabaseClient.client.from("destinations").insert(newDest)
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Berhasil Disimpan!", Toast.LENGTH_SHORT).show()
+                }
+                getDestinations()
+                onSuccess()
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Gagal: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    // --- DELETE DATA ---
+    fun deleteDestination(destination: Destination, context: Context) {
+        viewModelScope.launch {
+            try {
+                isLoading = true
+                val destId = destination.id ?: throw Exception("ID tidak valid")
+
+                // Hapus dari Database
+                SupabaseClient.client.from("destinations").delete {
+                    filter { eq("id", destId) }
+                }
+
+                // Hapus File dari Storage (Jika ada)
+                try {
+                    val fileName = destination.imageUrl?.substringAfterLast("/")
+                    if (fileName != null) {
+                        SupabaseClient.client.storage.from("destinations").delete(fileName)
+                    }
+                } catch (e: Exception) { Log.e("Delete", "Gagal hapus gambar: ${e.message}") }
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Data terhapus", Toast.LENGTH_SHORT).show()
+                }
+                getDestinations()
+
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Gagal hapus: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    // --- UPDATE DATA (BARU) ---
+    fun updateDestination(
+        id: Long,
         name: String,
         description: String,
-        imageUri: Uri,
+        newImageUri: Uri?,     // Bisa null jika user tidak ganti foto
+        currentImageUrl: String?, // URL lama
         context: Context,
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
             try {
                 isLoading = true
-                errorMessage = null
+                var finalImageUrl = currentImageUrl
 
-                // 1. Baca File
-                val inputStream = context.contentResolver.openInputStream(imageUri)
-                val bytes = inputStream?.readBytes()
-                inputStream?.close()
+                // 1. Jika ada gambar baru, upload dulu
+                if (newImageUri != null) {
+                    val inputStream = context.contentResolver.openInputStream(newImageUri)
+                    val bytes = inputStream?.readBytes()
+                    inputStream?.close()
 
-                if (bytes == null) throw Exception("Gagal membaca gambar")
-
-                // 2. Upload Storage
-                val fileName = "dest_${System.currentTimeMillis()}.jpg"
-                val bucket = SupabaseClient.client.storage.from("destinations")
-                bucket.upload(fileName, bytes)
-                val publicUrl = bucket.publicUrl(fileName)
-
-                // 3. Simpan Database
-                val newDestination = Destination(
-                    name = name,
-                    description = description,
-                    imageUrl = publicUrl
-                )
-                SupabaseClient.client.from("destinations").insert(newDestination)
-
-                Log.d("Supabase", "Upload Berhasil: $name")
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Berhasil disimpan!", Toast.LENGTH_SHORT).show()
+                    if (bytes != null) {
+                        val fileName = "dest_${System.currentTimeMillis()}.jpg"
+                        val bucket = SupabaseClient.client.storage.from("destinations")
+                        bucket.upload(fileName, bytes)
+                        finalImageUrl = bucket.publicUrl(fileName)
+                    }
                 }
 
-                // Refresh data otomatis
+                // 2. Update data di Database
+                val updatedDest = Destination(id = id, name = name, description = description, imageUrl = finalImageUrl)
+
+                SupabaseClient.client.from("destinations").update(updatedDest) {
+                    filter {
+                        eq("id", id)
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Data Berhasil Diupdate!", Toast.LENGTH_SHORT).show()
+                }
                 getDestinations()
                 onSuccess()
 
             } catch (e: Exception) {
-                errorMessage = "Gagal: ${e.message}"
-                Log.e("Supabase", "Error Upload: ${e.message}")
+                Log.e("Update", "Error: ${e.message}")
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Gagal Update: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             } finally {
                 isLoading = false

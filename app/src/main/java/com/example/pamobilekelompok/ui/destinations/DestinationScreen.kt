@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -12,14 +13,15 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -30,7 +32,9 @@ import com.example.pamobilekelompok.viewmodel.DestinationViewModel
 @Composable
 fun DestinationScreen(
     viewModel: DestinationViewModel = viewModel(),
-    onNavigateBack: () -> Unit
+    isAdmin: Boolean = false,
+    onNavigateBack: () -> Unit,
+    onNavigateToDetail: (Destination) -> Unit
 ) {
     // State Form
     var name by remember { mutableStateOf("") }
@@ -38,14 +42,20 @@ fun DestinationScreen(
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showDialog by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
+    // State untuk Mode Edit
+    var isEditMode by remember { mutableStateOf(false) }
+    var currentEditingId by remember { mutableStateOf<Long?>(null) }
+    var currentEditingImageUrl by remember { mutableStateOf<String?>(null) }
 
+    // State Konfirmasi Hapus
+    var destinationToDelete by remember { mutableStateOf<Destination?>(null) }
+
+    val context = LocalContext.current
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri -> selectedImageUri = uri }
     )
 
-    // Load data awal saat halaman dibuka
     LaunchedEffect(Unit) {
         viewModel.getDestinations()
     }
@@ -58,50 +68,36 @@ fun DestinationScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
                     }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.getDestinations() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                    }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Tambah")
+            if (isAdmin) {
+                FloatingActionButton(onClick = {
+                    // Reset Form untuk Mode Tambah Baru
+                    isEditMode = false
+                    name = ""
+                    description = ""
+                    selectedImageUri = null
+                    currentEditingId = null
+                    currentEditingImageUrl = null
+                    showDialog = true
+                }) {
+                    Icon(Icons.Default.Add, contentDescription = "Tambah")
+                }
             }
         }
     ) { innerPadding ->
 
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-
-            // 1. Loading
-            if (viewModel.isLoading && !showDialog) {
+            if (viewModel.isLoading && !showDialog && destinationToDelete == null) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
-            // 2. Data Kosong / Error
-            else if (viewModel.destinations.isEmpty()) {
-                Column(
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    if (viewModel.errorMessage != null) {
-                        Text(
-                            text = "Gagal memuat data:\n${viewModel.errorMessage}",
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.getDestinations() }) {
-                            Text("Coba Lagi")
-                        }
-                    } else {
-                        Text("Data Kosong.\nPastikan Anda sudah menjalankan SQL Policy di Supabase.", textAlign = TextAlign.Center)
-                    }
-                }
-            }
-            // 3. List Data
-            else {
+            } else if (viewModel.destinations.isEmpty()) {
+                Text(
+                    text = "Belum ada destinasi.",
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            } else {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(8.dp),
@@ -109,23 +105,43 @@ fun DestinationScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(viewModel.destinations) { destination ->
-                        DestinationItem(destination)
+                        DestinationItem(
+                            destination = destination,
+                            isAdmin = isAdmin,
+                            onClick = { onNavigateToDetail(destination) },
+                            onDeleteClick = { destinationToDelete = destination },
+                            onEditClick = {
+                                // --- ISI DATA KE FORM UNTUK EDIT ---
+                                isEditMode = true
+                                currentEditingId = destination.id
+                                name = destination.name
+                                description = destination.description ?: ""
+                                currentEditingImageUrl = destination.imageUrl
+                                selectedImageUri = null // Reset gambar baru
+                                showDialog = true
+                            }
+                        )
                     }
                 }
             }
         }
 
-        // --- DIALOG TAMBAH DATA ---
+        // --- DIALOG INPUT (BISA TAMBAH / EDIT) ---
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
-                title = { Text("Tambah Destinasi") },
+                title = { Text(if (isEditMode) "Edit Destinasi" else "Tambah Destinasi") },
                 text = {
-                    Column {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
-                            label = { Text("Nama Tempat") },
+                            label = { Text("Nama") },
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -133,8 +149,7 @@ fun DestinationScreen(
                             value = description,
                             onValueChange = { description = it },
                             label = { Text("Deskripsi") },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 3
+                            modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -146,51 +161,97 @@ fun DestinationScreen(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(if (selectedImageUri == null) "Pilih Foto" else "Ganti Foto")
+                            Text(if (selectedImageUri == null) "Pilih Foto Baru" else "Ganti Foto")
                         }
 
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // LOGIKA PREVIEW FOTO
                         if (selectedImageUri != null) {
-                            Spacer(modifier = Modifier.height(8.dp))
+                            // 1. Tampilkan Foto Baru yg dipilih dari HP
                             AsyncImage(
                                 model = selectedImageUri,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxWidth().height(150.dp),
+                                contentDescription = "Preview Baru",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(150.dp),
                                 contentScale = ContentScale.Crop
                             )
+                        } else if (isEditMode && currentEditingImageUrl != null) {
+                            // 2. Tampilkan Foto Lama (Jika user belum pilih foto baru)
+                            AsyncImage(
+                                model = currentEditingImageUrl,
+                                contentDescription = "Foto Lama",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(150.dp),
+                                contentScale = ContentScale.Crop
+                            )
+                            Text("Foto Saat Ini", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 },
                 confirmButton = {
-                    Button(
-                        onClick = {
-                            if (name.isNotEmpty() && selectedImageUri != null) {
-                                viewModel.uploadDestination(
-                                    name, description, selectedImageUri!!, context
-                                ) {
-                                    name = ""
-                                    description = ""
-                                    selectedImageUri = null
-                                    showDialog = false
+                    Button(onClick = {
+                        if (name.isNotEmpty()) {
+                            if (isEditMode) {
+                                // --- MODE UPDATE ---
+                                if (currentEditingId != null) {
+                                    viewModel.updateDestination(
+                                        id = currentEditingId!!,
+                                        name = name,
+                                        description = description,
+                                        newImageUri = selectedImageUri, // Bisa null
+                                        currentImageUrl = currentEditingImageUrl,
+                                        context = context
+                                    ) {
+                                        showDialog = false
+                                    }
                                 }
                             } else {
-                                Toast.makeText(context, "Nama dan Foto wajib diisi!", Toast.LENGTH_SHORT).show()
+                                // --- MODE CREATE ---
+                                if (selectedImageUri != null) {
+                                    viewModel.uploadDestination(
+                                        name, description, selectedImageUri!!, context
+                                    ) {
+                                        showDialog = false
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Foto wajib dipilih!", Toast.LENGTH_SHORT).show()
+                                }
                             }
-                        },
-                        enabled = !viewModel.isLoading
-                    ) {
-                        if (viewModel.isLoading) {
-                            // Perbaikan: Menggunakan Modifier.size() untuk ukuran loader
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
                         } else {
-                            Text("Simpan")
+                            Toast.makeText(context, "Nama wajib diisi!", Toast.LENGTH_SHORT).show()
                         }
-                    }
+                    }) { Text("Simpan") }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDialog = false }) { Text("Batal") }
+                }
+            )
+        }
+
+        // --- DIALOG KONFIRMASI HAPUS ---
+        if (destinationToDelete != null) {
+            AlertDialog(
+                onDismissRequest = { destinationToDelete = null },
+                title = { Text("Hapus Destinasi") },
+                text = { Text("Apakah Anda yakin ingin menghapus '${destinationToDelete?.name}'?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.deleteDestination(destinationToDelete!!, context)
+                            destinationToDelete = null
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Hapus")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { destinationToDelete = null }) {
+                        Text("Batal")
+                    }
                 }
             )
         }
@@ -198,29 +259,68 @@ fun DestinationScreen(
 }
 
 @Composable
-fun DestinationItem(destination: Destination) {
+fun DestinationItem(
+    destination: Destination,
+    isAdmin: Boolean,
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onEditClick: () -> Unit // Callback Edit Baru
+) {
     Card(
         elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        modifier = Modifier.clickable { onClick() }
     ) {
-        Column {
-            AsyncImage(
-                model = destination.imageUrl,
-                contentDescription = destination.name,
-                modifier = Modifier.fillMaxWidth().height(120.dp),
-                contentScale = ContentScale.Crop
-            )
-            Column(modifier = Modifier.padding(8.dp)) {
+        Box {
+            Column {
+                AsyncImage(
+                    model = destination.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    contentScale = ContentScale.Crop
+                )
                 Text(
                     text = destination.name,
                     style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(8.dp),
                     maxLines = 1
                 )
-                Text(
-                    text = destination.description ?: "-",
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 2
-                )
+            }
+
+            // --- TOMBOL EDIT & DELETE (KHUSUS ADMIN) ---
+            if (isAdmin) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                ) {
+                    // Tombol Edit (Kuning/Biru)
+                    IconButton(
+                        onClick = onEditClick,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit",
+                            tint = Color(0xFFFFA000) // Warna Orange
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    // Tombol Delete (Merah)
+                    IconButton(
+                        onClick = onDeleteClick,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Hapus",
+                            tint = Color.Red
+                        )
+                    }
+                }
             }
         }
     }
