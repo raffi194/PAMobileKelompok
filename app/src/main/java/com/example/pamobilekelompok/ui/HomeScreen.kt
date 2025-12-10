@@ -120,7 +120,7 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // --- 4. TRIP DOCS ---
-        Text("Dokumentasi Trip", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Pesanan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
 
         Card(
@@ -131,7 +131,7 @@ fun HomeScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Lihat Galeri Perjalanan", fontWeight = FontWeight.Bold)
+                Text("Lihat Galeri Pesanan", fontWeight = FontWeight.Bold)
             }
         }
 

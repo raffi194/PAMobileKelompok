@@ -5,8 +5,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Destination(
-    val id: Long? = null, // Gunakan Long untuk tipe data bigint di Supabase
+    val id: Long? = null,
     val name: String,
-    val description: String? = null, // Ubah jadi Nullable agar aman jika kosong di DB
-    @SerialName("image_url") val imageUrl: String? = null
+    val description: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    val price: Long? = 0
 )
