@@ -101,3 +101,5 @@ fun LoginScreen(
         }
     }
 }
+
+annotation class LoginScreen
