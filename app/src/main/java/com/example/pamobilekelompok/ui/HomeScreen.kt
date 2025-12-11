@@ -85,7 +85,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- 2. FITUR UTAMA (3 KOLOM) ---
+        // --- 2. FITUR UTAMA (4 KOLOM) ---
         Text("Jelajahi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -97,17 +97,41 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween // Mengatur jarak agar 4 item muat rapi
             ) {
-                FeatureItem(icon = Icons.Default.Place, label = "Destinasi", onClick = { onNavigateToFeature("destinations") })
-                FeatureItem(icon = Icons.Default.Star, label = "Kuliner", onClick = { onNavigateToFeature("foods") })
-                FeatureItem(icon = Icons.Default.Home, label = "Penginapan", onClick = { onNavigateToFeature("hotels") })
+                // Feature 1: Destinasi
+                FeatureItem(
+                    icon = Icons.Default.Place,
+                    label = "Destinasi",
+                    onClick = { onNavigateToFeature("destinations") }
+                )
+
+                // Feature 2: Kuliner
+                FeatureItem(
+                    icon = Icons.Default.Star,
+                    label = "Kuliner",
+                    onClick = { onNavigateToFeature("foods") }
+                )
+
+                // Feature 3: Penginapan
+                FeatureItem(
+                    icon = Icons.Default.Home,
+                    label = "Hotel",
+                    onClick = { onNavigateToFeature("hotels") }
+                )
+
+                // Feature 4: Komunitas (BARU)
+                FeatureItem(
+                    icon = Icons.Default.Person, // Menggunakan icon Person untuk komunitas
+                    label = "Komunitas",
+                    onClick = { onNavigateToFeature("trips") }
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- 3. EVENT (HORIZONTAL SCROLL) ---
+        // --- 3. EVENT (HORIZONTAL SCROLL - TETAP ADA) ---
         Text("Event Seru", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -119,7 +143,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- 4. TRIP DOCS ---
+        // --- 4. TRIP DOCS / GALERI PESANAN ---
         Text("Pesanan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -127,11 +151,11 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(120.dp)
-                .clickable { onNavigateToFeature("trips") },
+                .clickable { onNavigateToFeature("booking_list") }, // Ubah route jika perlu
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Lihat Galeri Pesanan", fontWeight = FontWeight.Bold)
+                Text("Lihat Riwayat Pesanan", fontWeight = FontWeight.Bold)
             }
         }
 
@@ -139,13 +163,13 @@ fun HomeScreen(
     }
 }
 
-// Komponen Kecil untuk Menu Utama
+// Komponen Kecil untuk Menu Utama (Perlu penyesuaian ukuran font jika 4 kolom terlalu sempit)
 @Composable
 fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { onClick() }) {
         Box(
             modifier = Modifier
-                .size(60.dp)
+                .size(56.dp) // Sedikit diperkecil agar muat 4 (tadinya 60.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center
@@ -153,7 +177,11 @@ fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit) {
             Icon(imageVector = icon, contentDescription = null, tint = Color.White)
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall, // Gunakan bodySmall agar teks muat
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
