@@ -35,6 +35,7 @@ import com.example.pamobilekelompok.ui.auth.LoginScreen
 import com.example.pamobilekelompok.ui.auth.RegisterScreen
 import com.example.pamobilekelompok.ui.destinations.DestinationDetailScreen
 import com.example.pamobilekelompok.ui.destinations.DestinationScreen
+import com.example.pamobilekelompok.ui.foods.FoodScreen
 import com.example.pamobilekelompok.ui.hotels.HotelScreen
 import com.example.pamobilekelompok.ui.hotels.HotelDetailScreen
 import com.example.pamobilekelompok.ui.reviews.ReviewScreen
@@ -44,6 +45,7 @@ import com.example.pamobilekelompok.viewmodel.AuthViewModel
 import com.example.pamobilekelompok.viewmodel.Booking
 import com.example.pamobilekelompok.viewmodel.BookingViewModel
 import com.example.pamobilekelompok.viewmodel.DestinationViewModel
+import com.example.pamobilekelompok.viewmodel.FoodViewModel
 import com.example.pamobilekelompok.viewmodel.ReviewViewModel
 import com.example.pamobilekelompok.viewmodel.TripViewModel
 import io.github.jan.supabase.auth.auth
@@ -60,7 +62,7 @@ class MainActivity : ComponentActivity() {
                 val destinationViewModel: DestinationViewModel = viewModel()
                 val tripViewModel: TripViewModel = viewModel()
                 val reviewViewModel: ReviewViewModel = viewModel()
-
+                val foodViewModel: FoodViewModel = viewModel()
                 var startDestination by remember { mutableStateOf<String?>(null) }
 
                 LaunchedEffect(Unit) {
@@ -365,7 +367,12 @@ class MainActivity : ComponentActivity() {
                             }
 
                             // --- PLACEHOLDER ---
-                            composable("foods") { Text("Halaman Kuliner") }
+                            composable("foods") {
+                                FoodScreen(
+                                    viewModel = foodViewModel,
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
                             composable("events") { Text("Halaman Event") }
                             // hotels sudah dihandle di atas
                             composable("reviews") { Text("Halaman Review") }
