@@ -21,30 +21,39 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.pamobilekelompok.data.SupabaseClient
-// Import Screen Baru & Lama
-import com.example.pamobilekelompok.ui.booking.BookingDestinationScreen
-import com.example.pamobilekelompok.ui.booking.BookingDestinationSuccessScreen
-import com.example.pamobilekelompok.ui.booking.PaymentDestinationScreen
-import com.example.pamobilekelompok.ui.booking.OrderHistoryScreen
-import com.example.pamobilekelompok.ui.booking.OrderDetailScreen
-import com.example.pamobilekelompok.ui.booking.HotelBookingScreen
-import com.example.pamobilekelompok.ui.booking.HotelBookingSuccessScreen
+import com.example.pamobilekelompok.model.Event
+
+// Import UI Screens
 import com.example.pamobilekelompok.ui.HomeScreen
 import com.example.pamobilekelompok.ui.ProfileScreen
 import com.example.pamobilekelompok.ui.auth.LoginScreen
 import com.example.pamobilekelompok.ui.auth.RegisterScreen
+import com.example.pamobilekelompok.ui.booking.BookingDestinationScreen
+import com.example.pamobilekelompok.ui.booking.BookingDestinationSuccessScreen
+import com.example.pamobilekelompok.ui.booking.HotelBookingScreen
+import com.example.pamobilekelompok.ui.booking.HotelBookingSuccessScreen
+import com.example.pamobilekelompok.ui.booking.OrderDetailScreen
+import com.example.pamobilekelompok.ui.booking.OrderHistoryScreen
+import com.example.pamobilekelompok.ui.booking.PaymentDestinationScreen
 import com.example.pamobilekelompok.ui.destinations.DestinationDetailScreen
 import com.example.pamobilekelompok.ui.destinations.DestinationScreen
+import com.example.pamobilekelompok.ui.events.AddEventScreen
+import com.example.pamobilekelompok.ui.events.BookingEventScreen
+import com.example.pamobilekelompok.ui.events.EventDetailScreen
+import com.example.pamobilekelompok.ui.events.EventScreen
 import com.example.pamobilekelompok.ui.foods.FoodScreen
-import com.example.pamobilekelompok.ui.hotels.HotelScreen
 import com.example.pamobilekelompok.ui.hotels.HotelDetailScreen
+import com.example.pamobilekelompok.ui.hotels.HotelScreen
 import com.example.pamobilekelompok.ui.reviews.ReviewScreen
 import com.example.pamobilekelompok.ui.trips.TripScreen
 import com.example.pamobilekelompok.ui.theme.PAMobileKelompokTheme
+
+// Import ViewModels
 import com.example.pamobilekelompok.viewmodel.AuthViewModel
 import com.example.pamobilekelompok.viewmodel.Booking
 import com.example.pamobilekelompok.viewmodel.BookingViewModel
 import com.example.pamobilekelompok.viewmodel.DestinationViewModel
+import com.example.pamobilekelompok.viewmodel.EventViewModel
 import com.example.pamobilekelompok.viewmodel.FoodViewModel
 import com.example.pamobilekelompok.viewmodel.ReviewViewModel
 import com.example.pamobilekelompok.viewmodel.TripViewModel
@@ -62,7 +71,9 @@ class MainActivity : ComponentActivity() {
                 val destinationViewModel: DestinationViewModel = viewModel()
                 val tripViewModel: TripViewModel = viewModel()
                 val reviewViewModel: ReviewViewModel = viewModel()
+                val eventViewModel: EventViewModel = viewModel()
                 val foodViewModel: FoodViewModel = viewModel()
+
                 var startDestination by remember { mutableStateOf<String?>(null) }
 
                 LaunchedEffect(Unit) {
@@ -82,16 +93,12 @@ class MainActivity : ComponentActivity() {
                             startDestination = startDestination!!,
                             modifier = Modifier.padding(innerPadding)
                         ) {
-                            // ... Route Login, Register, Home, Profile ...
+                            // --- AUTH ---
                             composable("login") {
                                 LoginScreen(
                                     authViewModel = authViewModel,
                                     onNavigateSuccess = {
-                                        navController.navigate("home") {
-                                            popUpTo("login") {
-                                                inclusive = true
-                                            }
-                                        }
+                                        navController.navigate("home") { popUpTo("login") { inclusive = true } }
                                     },
                                     onNavigateToRegister = { navController.navigate("register") }
                                 )
@@ -99,11 +106,20 @@ class MainActivity : ComponentActivity() {
                             composable("register") {
                                 RegisterScreen(onNavigateToLogin = { navController.popBackStack() })
                             }
+
+                            // --- HOME ---
                             composable("home") {
                                 HomeScreen(
                                     authViewModel = authViewModel,
+                                    eventViewModel = eventViewModel, // Inject Event VM
                                     onNavigateToFeature = { navController.navigate(it) },
-                                    onNavigateToProfile = { navController.navigate("profile") }
+                                    onNavigateToProfile = { navController.navigate("profile") },
+                                    // UPDATE 6: Navigasi Detail Event dari Home
+                                    onNavigateToEventDetail = { event ->
+                                        val encodedUrl = Uri.encode(event.posterUrl ?: "")
+                                        val encodedDesc = Uri.encode(event.description)
+                                        navController.navigate("event_detail/${event.id}/${event.title}/$encodedDesc/${event.eventDate}/$encodedUrl/${event.price}")
+                                    }
                                 )
                             }
                             composable("profile") {
@@ -111,16 +127,12 @@ class MainActivity : ComponentActivity() {
                                     authViewModel = authViewModel,
                                     onNavigateBack = { navController.popBackStack() },
                                     onLogoutSuccess = {
-                                        navController.navigate("login") {
-                                            popUpTo(0) {
-                                                inclusive = true
-                                            }
-                                        }
+                                        navController.navigate("login") { popUpTo(0) { inclusive = true } }
                                     }
                                 )
                             }
 
-                            // --- DESTINASI LIST ---
+                            // --- DESTINASI ---
                             composable("destinations") {
                                 DestinationScreen(
                                     viewModel = destinationViewModel,
@@ -134,8 +146,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-
-                            // --- DESTINASI DETAIL ---
                             composable(
                                 "destination_detail/{id}/{name}/{desc}/{url}/{price}",
                                 arguments = listOf(
@@ -191,7 +201,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- PAYMENT DESTINASI ---
+                            // --- PAYMENT DESTINASI (UPDATED: Use PaymentScreen) ---
                             composable(
                                 "payment/{bookingId}/{total}",
                                 arguments = listOf(
@@ -201,23 +211,29 @@ class MainActivity : ComponentActivity() {
                             ) { backStackEntry ->
                                 val id = backStackEntry.arguments?.getLong("bookingId") ?: 0L
                                 val total = backStackEntry.arguments?.getLong("total") ?: 0L
+                                val vm: BookingViewModel = viewModel() // Ambil VM Destinasi
+                                val context = LocalContext.current
 
+                                // UPDATE 7: Pakai PaymentScreen Generic
                                 PaymentDestinationScreen(
                                     bookingId = id,
                                     totalPrice = total,
-                                    onPaymentSuccess = { navController.navigate("booking_destination_success") }
+                                    isLoading = vm.isLoading,
+                                    onPayClicked = {
+                                        vm.updatePaymentStatus(id, context) {
+                                            navController.navigate("booking_destination_success")
+                                        }
+                                    }
                                 )
                             }
 
                             composable("booking_destination_success") {
                                 BookingDestinationSuccessScreen(onNavigateHome = {
-                                    navController.navigate(
-                                        "home"
-                                    ) { popUpTo("home") { inclusive = true } }
+                                    navController.navigate("home") { popUpTo("home") { inclusive = true } }
                                 })
                             }
 
-                            // 🏨 --- HOTELS LIST ---
+                            // --- HOTELS ---
                             composable("hotels") {
                                 HotelScreen(
                                     isAdmin = authViewModel.isAdmin,
@@ -232,8 +248,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-
-                            // 🏨 --- HOTELS DETAIL ---
+                            // ... Route Hotel Detail & Booking (Tetap sama, disingkat agar muat) ...
                             composable(
                                 route = "hotel_detail/{id}/{name}/{address}/{price}/{desc}/{facilities}/{url}",
                                 arguments = listOf(
@@ -270,8 +285,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-
-                            // 🏨 --- HOTEL BOOKING FORM ---
                             composable(
                                 route = "booking_hotel/{hotelId}/{hotelName}/{price}",
                                 arguments = listOf(
@@ -281,8 +294,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             ) { backStackEntry ->
                                 val hotelId = backStackEntry.arguments?.getLong("hotelId") ?: 0
-                                val hotelName =
-                                    backStackEntry.arguments?.getString("hotelName") ?: ""
+                                val hotelName = backStackEntry.arguments?.getString("hotelName") ?: ""
                                 val price = backStackEntry.arguments?.getString("price")
 
                                 HotelBookingScreen(
@@ -290,26 +302,20 @@ class MainActivity : ComponentActivity() {
                                     hotelName = hotelName,
                                     pricePerNight = price,
                                     onNavigateBack = { navController.popBackStack() },
-                                    onConfirmBooking = {
-                                        navController.navigate("booking_hotel_success")
-                                    }
+                                    onConfirmBooking = { navController.navigate("booking_hotel_success") }
                                 )
                             }
-
-                            // 🏨 --- HOTEL BOOKING SUCCESS ---
                             composable("booking_hotel_success") {
-                                HotelBookingSuccessScreen(
-                                    onNavigateHome = {
-                                        navController.navigate("home") {
-                                            popUpTo("home") { inclusive = true }
-                                        }
-                                    }
-                                )
+                                HotelBookingSuccessScreen(onNavigateHome = {
+                                    navController.navigate("home") { popUpTo("home") { inclusive = true } }
+                                })
                             }
 
-                            // --- RIWAYAT (ORDER HISTORY) ---
+                            // --- ORDER HISTORY ---
                             composable("booking_list") {
                                 OrderHistoryScreen(
+                                    bookingViewModel = viewModel(), // VM Destinasi
+                                    eventViewModel = eventViewModel, // VM Event
                                     onNavigateBack = { navController.popBackStack() },
                                     onNavigateToDetail = { booking ->
                                         val jsonBooking = Uri.encode(Json.encodeToString(booking))
@@ -317,15 +323,11 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-
                             composable(
                                 route = "booking_detail/{jsonBooking}",
-                                arguments = listOf(navArgument("jsonBooking") {
-                                    type = NavType.StringType
-                                })
+                                arguments = listOf(navArgument("jsonBooking") { type = NavType.StringType })
                             ) { backStackEntry ->
-                                val jsonStr =
-                                    backStackEntry.arguments?.getString("jsonBooking") ?: ""
+                                val jsonStr = backStackEntry.arguments?.getString("jsonBooking") ?: ""
                                 val booking = Json.decodeFromString<Booking>(jsonStr)
 
                                 OrderDetailScreen(
@@ -337,7 +339,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- TRIPS (KOMUNITAS) ---
+                            // --- TRIPS ---
                             composable("trips") {
                                 TripScreen(
                                     tripViewModel = tripViewModel,
@@ -366,15 +368,148 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- PLACEHOLDER ---
+                            // ==========================================
+                            //          FITUR EVENT (DIKEMBALIKAN)
+                            // ==========================================
+                            composable("events") {
+                                EventScreen(
+                                    viewModel = eventViewModel,
+                                    isAdmin = authViewModel.isAdmin,
+                                    onNavigateToAdd = { navController.navigate("add_event") },
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onNavigateToEdit = { event ->
+                                        val encodedUrl = Uri.encode(event.posterUrl ?: "")
+                                        val encodedDesc = Uri.encode(event.description)
+                                        navController.navigate("edit_event/${event.id}/${event.title}/$encodedDesc/${event.eventDate}/$encodedUrl/${event.price}")
+                                    },
+                                    onNavigateToDetail = { event ->
+                                        val encodedUrl = Uri.encode(event.posterUrl ?: "")
+                                        val encodedDesc = Uri.encode(event.description)
+                                        navController.navigate("event_detail/${event.id}/${event.title}/$encodedDesc/${event.eventDate}/$encodedUrl/${event.price}")
+                                    }
+                                )
+                            }
+
+                            composable("add_event") {
+                                AddEventScreen(onNavigateBack = { navController.popBackStack() })
+                            }
+
+                            composable(
+                                route = "edit_event/{id}/{title}/{desc}/{date}/{url}/{price}",
+                                arguments = listOf(
+                                    navArgument("id") { type = NavType.LongType },
+                                    navArgument("title") { type = NavType.StringType },
+                                    navArgument("desc") { type = NavType.StringType },
+                                    navArgument("date") { type = NavType.StringType },
+                                    navArgument("url") { type = NavType.StringType },
+                                    navArgument("price") { type = NavType.LongType }
+                                )
+                            ) { backStackEntry ->
+                                val id = backStackEntry.arguments?.getLong("id")
+                                val title = backStackEntry.arguments?.getString("title") ?: ""
+                                val desc = backStackEntry.arguments?.getString("desc") ?: ""
+                                val date = backStackEntry.arguments?.getString("date") ?: ""
+                                val url = backStackEntry.arguments?.getString("url") ?: ""
+                                val price = backStackEntry.arguments?.getLong("price") ?: 0L
+
+                                AddEventScreen(
+                                    eventId = id,
+                                    initialTitle = title,
+                                    initialDesc = desc,
+                                    initialDate = date,
+                                    initialPrice = price.toString(),
+                                    initialImageUrl = url,
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
+
+                            composable(
+                                route = "event_detail/{id}/{title}/{desc}/{date}/{url}/{price}",
+                                arguments = listOf(
+                                    navArgument("id") { type = NavType.LongType },
+                                    navArgument("title") { type = NavType.StringType },
+                                    navArgument("desc") { type = NavType.StringType },
+                                    navArgument("date") { type = NavType.StringType },
+                                    navArgument("url") { type = NavType.StringType },
+                                    navArgument("price") { type = NavType.LongType }
+                                )
+                            ) { entry ->
+                                val event = Event(
+                                    id = entry.arguments?.getLong("id"),
+                                    title = entry.arguments?.getString("title") ?: "",
+                                    description = entry.arguments?.getString("desc") ?: "",
+                                    eventDate = entry.arguments?.getString("date") ?: "",
+                                    posterUrl = entry.arguments?.getString("url") ?: "",
+                                    price = entry.arguments?.getLong("price") ?: 0L
+                                )
+                                EventDetailScreen(
+                                    event = event,
+                                    isAdmin = authViewModel.isAdmin,
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onNavigateToBooking = {
+                                        navController.navigate("booking_event/${event.id}/${event.title}/${event.price}/${event.eventDate}")
+                                    }
+                                )
+                            }
+
+                            composable(
+                                route = "booking_event/{id}/{title}/{price}/{date}",
+                                arguments = listOf(
+                                    navArgument("id") { type = NavType.LongType },
+                                    navArgument("title") { type = NavType.StringType },
+                                    navArgument("price") { type = NavType.LongType },
+                                    navArgument("date") { type = NavType.StringType }
+                                )
+                            ) { entry ->
+                                val event = Event(
+                                    id = entry.arguments?.getLong("id"),
+                                    title = entry.arguments?.getString("title") ?: "",
+                                    description = "",
+                                    eventDate = entry.arguments?.getString("date") ?: "",
+                                    price = entry.arguments?.getLong("price") ?: 0L
+                                )
+                                BookingEventScreen(
+                                    event = event,
+                                    viewModel = eventViewModel,
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onNavigateToPayment = { bookingId, totalPrice ->
+                                        navController.navigate("payment_event/$bookingId/$totalPrice")
+                                    }
+                                )
+                            }
+
+                            composable(
+                                route = "payment_event/{bookingId}/{total}",
+                                arguments = listOf(
+                                    navArgument("bookingId") { type = NavType.LongType },
+                                    navArgument("total") { type = NavType.LongType }
+                                )
+                            ) { backStackEntry ->
+                                val bookingId = backStackEntry.arguments?.getLong("bookingId") ?: 0L
+                                val total = backStackEntry.arguments?.getLong("total") ?: 0L
+                                val context = LocalContext.current
+
+                                // Menggunakan PaymentScreen yang sama
+                                PaymentDestinationScreen(
+                                    bookingId = bookingId,
+                                    totalPrice = total,
+                                    isLoading = eventViewModel.isLoading,
+                                    onPayClicked = {
+                                        eventViewModel.updatePaymentStatus(bookingId, context) {
+                                            navController.navigate("booking_destination_success")
+                                        }
+                                    }
+                                )
+                            }
+
+                            // --- PLACEHOLDERS ---
+                            // UPDATE 8: Uncomment jika FoodScreen sudah ada
                             composable("foods") {
                                 FoodScreen(
                                     viewModel = foodViewModel,
                                     onNavigateBack = { navController.popBackStack() }
                                 )
                             }
-                            composable("events") { Text("Halaman Event") }
-                            // hotels sudah dihandle di atas
                             composable("reviews") { Text("Halaman Review") }
                         }
                     }
