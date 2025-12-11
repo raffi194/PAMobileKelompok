@@ -44,6 +44,7 @@ import com.example.pamobilekelompok.viewmodel.AuthViewModel
 import com.example.pamobilekelompok.viewmodel.Booking
 import com.example.pamobilekelompok.viewmodel.BookingViewModel
 import com.example.pamobilekelompok.viewmodel.DestinationViewModel
+import com.example.pamobilekelompok.viewmodel.ReviewViewModel
 import com.example.pamobilekelompok.viewmodel.TripViewModel
 import io.github.jan.supabase.auth.auth
 import kotlinx.serialization.encodeToString
@@ -58,6 +59,7 @@ class MainActivity : ComponentActivity() {
                 val authViewModel: AuthViewModel = viewModel()
                 val destinationViewModel: DestinationViewModel = viewModel()
                 val tripViewModel: TripViewModel = viewModel()
+                val reviewViewModel: ReviewViewModel = viewModel()
 
                 var startDestination by remember { mutableStateOf<String?>(null) }
 
@@ -82,7 +84,13 @@ class MainActivity : ComponentActivity() {
                             composable("login") {
                                 LoginScreen(
                                     authViewModel = authViewModel,
-                                    onNavigateSuccess = { navController.navigate("home") { popUpTo("login") { inclusive = true } } },
+                                    onNavigateSuccess = {
+                                        navController.navigate("home") {
+                                            popUpTo("login") {
+                                                inclusive = true
+                                            }
+                                        }
+                                    },
                                     onNavigateToRegister = { navController.navigate("register") }
                                 )
                             }
@@ -100,7 +108,13 @@ class MainActivity : ComponentActivity() {
                                 ProfileScreen(
                                     authViewModel = authViewModel,
                                     onNavigateBack = { navController.popBackStack() },
-                                    onLogoutSuccess = { navController.navigate("login") { popUpTo(0) { inclusive = true } } }
+                                    onLogoutSuccess = {
+                                        navController.navigate("login") {
+                                            popUpTo(0) {
+                                                inclusive = true
+                                            }
+                                        }
+                                    }
                                 )
                             }
 
@@ -114,34 +128,38 @@ class MainActivity : ComponentActivity() {
                                         val url = Uri.encode(dest.imageUrl ?: "")
                                         val desc = Uri.encode(dest.description ?: "")
                                         val price = dest.price ?: 0L
-                                        navController.navigate("destination_detail/${dest.name}/$desc/$url/$price")
+                                        navController.navigate("destination_detail/${dest.id}/${dest.name}/$desc/$url/$price")
                                     }
                                 )
                             }
 
                             // --- DESTINASI DETAIL ---
                             composable(
-                                "destination_detail/{name}/{desc}/{url}/{price}",
+                                "destination_detail/{id}/{name}/{desc}/{url}/{price}",
                                 arguments = listOf(
+                                    navArgument("id") { type = NavType.LongType },
                                     navArgument("name") { type = NavType.StringType },
                                     navArgument("desc") { type = NavType.StringType },
                                     navArgument("url") { type = NavType.StringType },
                                     navArgument("price") { type = NavType.LongType }
                                 )
                             ) { backStackEntry ->
+                                val id = backStackEntry.arguments?.getLong("id") ?: 0L
                                 val name = backStackEntry.arguments?.getString("name") ?: ""
                                 val desc = backStackEntry.arguments?.getString("desc") ?: ""
                                 val url = backStackEntry.arguments?.getString("url") ?: ""
                                 val price = backStackEntry.arguments?.getLong("price") ?: 0L
 
                                 DestinationDetailScreen(
+                                    id = id,
                                     name = name,
                                     description = desc,
                                     imageUrl = url,
                                     price = price,
+                                    reviewViewModel = reviewViewModel,
                                     isAdmin = authViewModel.isAdmin,
                                     onNavigateBack = { navController.popBackStack() },
-                                    onNavigateToWriteReview = { navController.navigate("review/$name") },
+                                    onNavigateToWriteReview = { navController.navigate("review/$id/$name") },
                                     onNavigateToBooking = { navController.navigate("booking_destination/$name/$price") }
                                 )
                             }
@@ -190,7 +208,11 @@ class MainActivity : ComponentActivity() {
                             }
 
                             composable("booking_destination_success") {
-                                BookingDestinationSuccessScreen(onNavigateHome = { navController.navigate("home") { popUpTo("home") { inclusive = true } } })
+                                BookingDestinationSuccessScreen(onNavigateHome = {
+                                    navController.navigate(
+                                        "home"
+                                    ) { popUpTo("home") { inclusive = true } }
+                                })
                             }
 
                             // 🏨 --- HOTELS LIST ---
@@ -257,7 +279,8 @@ class MainActivity : ComponentActivity() {
                                 )
                             ) { backStackEntry ->
                                 val hotelId = backStackEntry.arguments?.getLong("hotelId") ?: 0
-                                val hotelName = backStackEntry.arguments?.getString("hotelName") ?: ""
+                                val hotelName =
+                                    backStackEntry.arguments?.getString("hotelName") ?: ""
                                 val price = backStackEntry.arguments?.getString("price")
 
                                 HotelBookingScreen(
@@ -295,9 +318,12 @@ class MainActivity : ComponentActivity() {
 
                             composable(
                                 route = "booking_detail/{jsonBooking}",
-                                arguments = listOf(navArgument("jsonBooking") { type = NavType.StringType })
+                                arguments = listOf(navArgument("jsonBooking") {
+                                    type = NavType.StringType
+                                })
                             ) { backStackEntry ->
-                                val jsonStr = backStackEntry.arguments?.getString("jsonBooking") ?: ""
+                                val jsonStr =
+                                    backStackEntry.arguments?.getString("jsonBooking") ?: ""
                                 val booking = Json.decodeFromString<Booking>(jsonStr)
 
                                 OrderDetailScreen(
@@ -319,10 +345,21 @@ class MainActivity : ComponentActivity() {
                             }
 
                             // --- REVIEW ---
-                            composable("review/{name}") {
+                            composable(
+                                "review/{id}/{name}",
+                                arguments = listOf(
+                                    navArgument("id") { type = NavType.LongType },
+                                    navArgument("name") { type = NavType.StringType }
+                                )
+                            ) {
+                                val id = it.arguments?.getLong("id") ?: 0L
                                 val destinationName = it.arguments?.getString("name") ?: ""
+
                                 ReviewScreen(
+                                    destinationId = id,
                                     destinationName = destinationName,
+                                    viewModel = reviewViewModel,
+                                    authViewModel = authViewModel,
                                     onNavigateBack = { navController.popBackStack() }
                                 )
                             }

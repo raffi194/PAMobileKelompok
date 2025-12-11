@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,21 +17,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.pamobilekelompok.model.Review
+import com.example.pamobilekelompok.viewmodel.ReviewViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DestinationDetailScreen(
+    id: Long,
     name: String,
     description: String,
     imageUrl: String?,
     // --- PARAMETER TAMBAHAN WAJIB AGAR ERROR HILANG ---
     price: Long,
+    reviewViewModel: ReviewViewModel,
     isAdmin: Boolean = false,
     onNavigateBack: () -> Unit,
     onNavigateToWriteReview: () -> Unit,
@@ -38,10 +45,11 @@ fun DestinationDetailScreen(
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Informasi", "Ulasan")
 
-    val mockReviews = listOf(
-        ReviewMock("Budi Santoso", "Tempatnya sangat indah!", 5),
-        ReviewMock("Siti Aminah", "Akses mudah.", 4)
-    )
+    val context = LocalContext.current
+
+    LaunchedEffect(id) {
+        reviewViewModel.getReviews(id)
+    }
 
     Scaffold(
         topBar = {
@@ -123,8 +131,26 @@ fun DestinationDetailScreen(
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
-                            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                items(mockReviews) { review -> ReviewItem(review) }
+
+                            if (reviewViewModel.isLoading) {
+                                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            } else if (reviewViewModel.reviews.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                    Text("Belum ada ulasan.", color = Color.Gray)
+                                }
+                            } else {
+                                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    items(reviewViewModel.reviews) { review ->
+                                        ReviewItem(
+                                            review = review,
+                                            onDownloadImage = { url ->
+                                                reviewViewModel.downloadReviewImage(context, url)
+                                            }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -135,26 +161,74 @@ fun DestinationDetailScreen(
 }
 
 @Composable
-fun ReviewItem(review: ReviewMock) {
+fun ReviewItem(
+    review: Review,
+    onDownloadImage: (String) -> Unit
+) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
-                    Text(review.username.first().toString(), color = Color.White, fontWeight = FontWeight.Bold)
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = review.userName.firstOrNull()?.toString()?.uppercase() ?: "?",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(review.username, style = MaterialTheme.typography.titleSmall)
-                    Row { repeat(5) { index -> Icon(Icons.Default.Star, null, tint = if (index < review.rating) Color(0xFFFFD700) else Color.Gray, modifier = Modifier.size(16.dp)) } }
+                    Text(review.userName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Row {
+                        repeat(5) { index ->
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                tint = if (index < review.rating) Color(0xFFFFD700) else Color.Gray,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                 }
             }
+
             Spacer(modifier = Modifier.height(8.dp))
             Text(review.comment, style = MaterialTheme.typography.bodyMedium)
+
+            if (!review.imageUrl.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(contentAlignment = Alignment.TopEnd) {
+                    AsyncImage(
+                        model = review.imageUrl,
+                        contentDescription = "Foto Review",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    IconButton(
+                        onClick = { onDownloadImage(review.imageUrl) },
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .size(32.dp)
+                            .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = "Download",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
-
-data class ReviewMock(val username: String, val comment: String, val rating: Int)
 
 fun formatRupiahDetail(number: Long): String {
     val format = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
