@@ -1,26 +1,31 @@
-package com.example.pamobilekelompok.ui
+package com.example.pamobilekelompok.ui.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pamobilekelompok.viewmodel.AuthViewModel
 
 @Composable
-fun AuthScreen(
+fun RegisterScreen(
     authViewModel: AuthViewModel = viewModel(),
-    isRegister: Boolean = false, // Default false artinya halaman Login
-    onNavigateSuccess: () -> Unit,
-    onNavigateToOtherScreen: () -> Unit // Pindah dari Login ke Register atau sebaliknya
+    onNavigateToLogin: () -> Unit
 ) {
+    var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
 
     Column(
@@ -31,12 +36,23 @@ fun AuthScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = if (isRegister) "Daftar Akun Baru" else "Selamat Datang",
+            text = "Daftar Akun Baru",
             fontSize = 24.sp,
             style = MaterialTheme.typography.headlineMedium
         )
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        // Input Username
+        OutlinedTextField(
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("Username") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Input Email
         OutlinedTextField(
@@ -49,53 +65,54 @@ fun AuthScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Input Password
+        // Input Password dengan Toggle Mata
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true
+            singleLine = true,
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = "Toggle Password")
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Tampilkan Pesan Error jika ada
+        // Error Message
         authViewModel.errorMessage?.let {
             Text(text = it, color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Tombol Login / Register
+        // Tombol Register
         if (authViewModel.isLoading) {
             CircularProgressIndicator()
         } else {
             Button(
                 onClick = {
-                    if (email.isNotEmpty() && password.isNotEmpty()) {
-                        if (isRegister) {
-                            authViewModel.register(email, password, context) {
-                                onNavigateToOtherScreen() // Setelah daftar, pindah ke Login
-                            }
-                        } else {
-                            authViewModel.login(email, password, context, onNavigateSuccess)
+                    if (email.isNotEmpty() && password.isNotEmpty() && username.isNotEmpty()) {
+                        authViewModel.register(email, password, username, context) {
+                            onNavigateToLogin() // Pindah ke Login jika sukses
                         }
+                    } else {
+                        // Toast handling (optional)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = if (isRegister) "Daftar Sekarang" else "Masuk")
+                Text(text = "Daftar Sekarang")
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Tombol Ganti Mode (Login <-> Register)
-        TextButton(onClick = onNavigateToOtherScreen) {
-            Text(
-                text = if (isRegister) "Sudah punya akun? Login" else "Belum punya akun? Daftar"
-            )
+        TextButton(onClick = onNavigateToLogin) {
+            Text(text = "Sudah punya akun? Login")
         }
     }
 }

@@ -10,63 +10,100 @@ import androidx.lifecycle.viewModelScope
 import com.example.pamobilekelompok.data.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+
+// Model sederhana untuk mengambil role
+@Serializable
+data class UserRole(val role: String)
 
 class AuthViewModel : ViewModel() {
 
-    // State untuk Loading dan Error
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
-    // Fungsi Login
+    var currentUserEmail by mutableStateOf<String?>(null)
+    var currentUserDisplay by mutableStateOf<String?>(null)
+
+    // State baru: Apakah user admin?
+    var isAdmin by mutableStateOf(false)
+
+    fun getCurrentUser() {
+        viewModelScope.launch {
+            val user = SupabaseClient.client.auth.currentUserOrNull()
+            if (user != null) {
+                currentUserEmail = user.email
+                val metadata = user.userMetadata
+                currentUserDisplay = metadata?.get("username")?.toString()?.removeSurrounding("\"") ?: "User"
+
+                // Cek Role di Database
+                checkUserRole(user.id)
+            }
+        }
+    }
+
+    private suspend fun checkUserRole(userId: String) {
+        try {
+            // Query ke tabel 'users' untuk ambil kolom 'role'
+            val result = SupabaseClient.client.from("users")
+                .select {
+                    filter {
+                        eq("id", userId)
+                    }
+                }.decodeSingleOrNull<UserRole>()
+
+            isAdmin = result?.role == "admin"
+        } catch (e: Exception) {
+            isAdmin = false // Default user biasa jika error
+        }
+    }
+
+    fun logout(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                SupabaseClient.client.auth.signOut()
+                onSuccess()
+            } catch (e: Exception) { }
+        }
+    }
+
     fun login(emailInput: String, passwordInput: String, context: Context, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
                 isLoading = true
                 errorMessage = null
-
-                // Panggil Supabase Auth (Sign In)
                 SupabaseClient.client.auth.signInWith(Email) {
                     email = emailInput
                     password = passwordInput
                 }
-
-                // Jika sukses
                 Toast.makeText(context, "Login Berhasil!", Toast.LENGTH_SHORT).show()
                 onSuccess()
-
             } catch (e: Exception) {
-                errorMessage = e.message ?: "Terjadi kesalahan saat login"
+                errorMessage = e.message ?: "Login Gagal"
             } finally {
                 isLoading = false
             }
         }
     }
 
-    // Fungsi Register
-    fun register(emailInput: String, passwordInput: String, context: Context, onSuccess: () -> Unit) {
+    fun register(emailInput: String, passwordInput: String, usernameInput: String, context: Context, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
                 isLoading = true
                 errorMessage = null
-
-                // Panggil Supabase Auth (Sign Up)
                 SupabaseClient.client.auth.signUpWith(Email) {
                     email = emailInput
                     password = passwordInput
+                    data = buildJsonObject { put("username", usernameInput) }
                 }
-
-                // Pesan Verifikasi Email (Karena Confirm Email Aktif)
-                Toast.makeText(
-                    context,
-                    "Registrasi Berhasil! Cek INBOX EMAIL Anda untuk verifikasi.",
-                    Toast.LENGTH_LONG
-                ).show()
-
+                Toast.makeText(context, "Registrasi Berhasil!", Toast.LENGTH_LONG).show()
                 onSuccess()
-
             } catch (e: Exception) {
-                errorMessage = e.message ?: "Terjadi kesalahan saat register"
+                errorMessage = e.message ?: "Register Gagal"
             } finally {
                 isLoading = false
             }
