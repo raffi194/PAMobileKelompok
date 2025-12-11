@@ -30,6 +30,7 @@ import com.example.pamobilekelompok.ui.auth.RegisterScreen
 import com.example.pamobilekelompok.ui.destinations.DestinationDetailScreen
 import com.example.pamobilekelompok.ui.destinations.DestinationScreen
 import com.example.pamobilekelompok.ui.reviews.ReviewScreen
+import com.example.pamobilekelompok.ui.trips.TripScreen
 import com.example.pamobilekelompok.ui.theme.PAMobileKelompokTheme
 import com.example.pamobilekelompok.viewmodel.AuthViewModel
 import io.github.jan.supabase.auth.auth
@@ -70,7 +71,11 @@ class MainActivity : ComponentActivity() {
                                 LoginScreen(
                                     authViewModel = authViewModel,
                                     onNavigateSuccess = {
-                                        navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                                        navController.navigate("home") {
+                                            popUpTo("login") {
+                                                inclusive = true
+                                            }
+                                        }
                                         authViewModel.getCurrentUser()
                                     },
                                     onNavigateToRegister = { navController.navigate("register") }
@@ -97,7 +102,11 @@ class MainActivity : ComponentActivity() {
                                     authViewModel = authViewModel,
                                     onNavigateBack = { navController.popBackStack() },
                                     onLogoutSuccess = {
-                                        navController.navigate("login") { popUpTo(0) { inclusive = true } }
+                                        navController.navigate("login") {
+                                            popUpTo(0) {
+                                                inclusive = true
+                                            }
+                                        }
                                     }
                                 )
                             }
@@ -110,7 +119,8 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToDetail = { destination ->
                                         val encodedUrl = Uri.encode(destination.imageUrl ?: "")
                                         val encodedDesc = Uri.encode(destination.description ?: "")
-                                        val price = destination.price ?: 0L // Ambil Harga dari Model
+                                        val price =
+                                            destination.price ?: 0L // Ambil Harga dari Model
 
                                         // Kirim semua data termasuk harga ke detail
                                         navController.navigate("destination_detail/${destination.name}/$encodedDesc/$encodedUrl/$price")
@@ -125,13 +135,16 @@ class MainActivity : ComponentActivity() {
                                     navArgument("name") { type = NavType.StringType },
                                     navArgument("desc") { type = NavType.StringType },
                                     navArgument("url") { type = NavType.StringType },
-                                    navArgument("price") { type = NavType.LongType } // Tipe Long untuk harga
+                                    navArgument("price") {
+                                        type = NavType.LongType
+                                    } // Tipe Long untuk harga
                                 )
                             ) { backStackEntry ->
                                 val name = backStackEntry.arguments?.getString("name") ?: ""
                                 val desc = backStackEntry.arguments?.getString("desc") ?: ""
                                 val url = backStackEntry.arguments?.getString("url") ?: ""
-                                val price = backStackEntry.arguments?.getLong("price") ?: 0L // Terima Harga
+                                val price =
+                                    backStackEntry.arguments?.getLong("price") ?: 0L // Terima Harga
 
                                 DestinationDetailScreen(
                                     name = name,
@@ -156,8 +169,10 @@ class MainActivity : ComponentActivity() {
                                     navArgument("price") { type = NavType.LongType } // Tipe Long
                                 )
                             ) { backStackEntry ->
-                                val name = backStackEntry.arguments?.getString("name") ?: "Destinasi"
-                                val price = backStackEntry.arguments?.getLong("price") ?: 0L // Terima Harga
+                                val name =
+                                    backStackEntry.arguments?.getString("name") ?: "Destinasi"
+                                val price =
+                                    backStackEntry.arguments?.getLong("price") ?: 0L // Terima Harga
 
                                 BookingDestinationScreen(
                                     destinationName = name,
@@ -183,7 +198,9 @@ class MainActivity : ComponentActivity() {
                             // --- REVIEW ---
                             composable("review/{name}") { backStackEntry ->
                                 val name = backStackEntry.arguments?.getString("name") ?: ""
-                                ReviewScreen(destinationName = name, onNavigateBack = { navController.popBackStack() })
+                                ReviewScreen(
+                                    destinationName = name,
+                                    onNavigateBack = { navController.popBackStack() })
                             }
 
                             // --- PLACEHOLDER FITUR LAIN ---
@@ -191,7 +208,12 @@ class MainActivity : ComponentActivity() {
                             composable("events") { Text("Halaman Event") }
                             composable("hotels") { Text("Halaman Penginapan") }
                             composable("reviews") { Text("Halaman Review") }
-                            composable("trips") { Text("Halaman Trip") }
+                            composable("trips") {
+                                TripScreen(
+                                    authViewModel = authViewModel,
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
                         }
                     }
                 }
