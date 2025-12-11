@@ -35,6 +35,8 @@ import com.example.pamobilekelompok.ui.auth.LoginScreen
 import com.example.pamobilekelompok.ui.auth.RegisterScreen
 import com.example.pamobilekelompok.ui.destinations.DestinationDetailScreen
 import com.example.pamobilekelompok.ui.destinations.DestinationScreen
+import com.example.pamobilekelompok.ui.events.AddEventScreen
+import com.example.pamobilekelompok.ui.events.EventScreen
 import com.example.pamobilekelompok.ui.hotels.HotelScreen
 import com.example.pamobilekelompok.ui.hotels.HotelDetailScreen
 import com.example.pamobilekelompok.ui.reviews.ReviewScreen
@@ -335,7 +337,55 @@ class MainActivity : ComponentActivity() {
 
                             // --- PLACEHOLDER ---
                             composable("foods") { Text("Halaman Kuliner") }
-                            composable("events") { Text("Halaman Event") }
+
+                            // --- FITUR EVENT WISATA (UPDATED) ---
+                            composable("events") {
+                                EventScreen(
+                                    isAdmin = authViewModel.isAdmin,
+                                    onNavigateToAdd = { navController.navigate("add_event") },
+                                    onNavigateBack = { navController.popBackStack() },
+                                    // Navigasi ke Edit dengan mengirim Data via URL
+                                    onNavigateToEdit = { event ->
+                                        // Encode URL agar aman dikirim lewat navigasi
+                                        val encodedUrl = Uri.encode(event.posterUrl ?: "")
+                                        val encodedDesc = Uri.encode(event.description)
+
+                                        navController.navigate("edit_event/${event.id}/${event.title}/$encodedDesc/${event.eventDate}/$encodedUrl")
+                                    }
+                                )
+                            }
+
+                            // --- HALAMAN TAMBAH (Create) ---
+                            composable("add_event") {
+                                AddEventScreen(onNavigateBack = { navController.popBackStack() })
+                            }
+
+                            // --- HALAMAN EDIT (Update) - Rute Baru ---
+                            composable(
+                                route = "edit_event/{id}/{title}/{desc}/{date}/{url}",
+                                arguments = listOf(
+                                    navArgument("id") { type = NavType.LongType },
+                                    navArgument("title") { type = NavType.StringType },
+                                    navArgument("desc") { type = NavType.StringType },
+                                    navArgument("date") { type = NavType.StringType },
+                                    navArgument("url") { type = NavType.StringType }
+                                )
+                            ) { backStackEntry ->
+                                val id = backStackEntry.arguments?.getLong("id")
+                                val title = backStackEntry.arguments?.getString("title") ?: ""
+                                val desc = backStackEntry.arguments?.getString("desc") ?: ""
+                                val date = backStackEntry.arguments?.getString("date") ?: ""
+                                val url = backStackEntry.arguments?.getString("url") ?: ""
+
+                                AddEventScreen(
+                                    eventId = id,
+                                    initialTitle = title,
+                                    initialDesc = desc,
+                                    initialDate = date,
+                                    initialImageUrl = url,
+                                    onNavigateBack = { navController.popBackStack() }
+                                )
+                            }
                             // hotels sudah dihandle di atas
                             composable("reviews") { Text("Halaman Review") }
                         }

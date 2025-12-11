@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,21 +23,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.example.pamobilekelompok.model.Event
 import com.example.pamobilekelompok.viewmodel.AuthViewModel
+import com.example.pamobilekelompok.viewmodel.EventViewModel
 
 @Composable
 fun HomeScreen(
     authViewModel: AuthViewModel = viewModel(),
+    eventViewModel: EventViewModel = viewModel(),
     onNavigateToFeature: (String) -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
     // Ambil data user agar nama tampil
     LaunchedEffect(Unit) {
         authViewModel.getCurrentUser()
+        eventViewModel.getEvents()
     }
 
     Column(
@@ -130,13 +138,68 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- 3. EVENT (HORIZONTAL SCROLL) ---
-        Text("Event Seru", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(12.dp))
+        // --- 3. EVENT SERU ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Event Seru", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            TextButton(onClick = { onNavigateToFeature("events") }) {
+                Text("Lihat Semua")
+            }
+        }
 
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(5) { // Contoh 5 Event Dummy
-                EventCard()
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // --- LOGIKA TAMPILAN (Loading vs Kosong vs Ada Data) ---
+        if (eventViewModel.isLoading) {
+            // KONDISI 1: SEDANG LOADING
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp), // Tinggi disesuaikan dengan kartu
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+
+        } else if (eventViewModel.events.isEmpty()) {
+            // KONDISI 2: DATA KOSONG (PERMINTAAN ANDA)
+            // Kita buat kotak abu-abu tipis dengan ikon agar tidak terlihat "bug"
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Belum ada event wisata",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                }
+            }
+
+        } else {
+            // KONDISI 3: ADA DATA (Tampilkan List)
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp)
+            ) {
+                items(eventViewModel.events) { event ->
+                    EventCard(event = event)
+                }
             }
         }
 
@@ -202,15 +265,41 @@ fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit) {
 
 // Komponen Dummy Event Card
 @Composable
-fun EventCard() {
+fun EventCard(event: Event) {
     Card(
         modifier = Modifier
             .width(160.dp)
-            .height(200.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.LightGray)
+            .height(220.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Event")
+        Column {
+            // 1. Gambar Event dari URL
+            AsyncImage(
+                model = event.posterUrl,
+                contentDescription = event.title,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                contentScale = ContentScale.Crop
+            )
+
+            // 2. Info Teks
+            Column(modifier = Modifier.padding(8.dp)) {
+                Text(
+                    text = event.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = event.eventDate, // Format tanggal dari database
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
