@@ -287,9 +287,9 @@ fun TripCard(
                     Text(text = displayName, fontWeight = FontWeight.Bold)
                 }
                 if (isOwner) {
-                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Edit, "Edit", tint = Color(0xFFFFA000)) }
+                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Edit, "Edit", tint = MaterialTheme.colorScheme.primary) }
                     Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, "Hapus", tint = Color.Red) }
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, "Hapus", tint = MaterialTheme.colorScheme.primary) }
                 }
             }
 

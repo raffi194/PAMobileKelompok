@@ -71,7 +71,7 @@ fun HotelScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("🏨 Hotel/Homestay") },
+                title = { Text("Hotel/Homestay") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")

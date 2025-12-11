@@ -45,16 +45,8 @@ fun HotelDetailScreen(
     val context = LocalContext.current
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Informasi", "Ulasan")
+    val tabs = listOf("Informasi")
 
-    // Mock Data Ulasan (Seperti Destinasi)
-    val mockReviews = listOf(
-        HotelReviewMock("Ahmad Fauzi", "Pelayanan ramah, kamar bersih!", 5),
-        HotelReviewMock("Siti Nurhaliza", "Lokasi strategis, harga terjangkau", 4),
-        HotelReviewMock("Budi Santoso", "WiFi kencang, cocok untuk WFH", 5),
-        HotelReviewMock("Dewi Lestari", "Sarapan enak, kamar nyaman", 4),
-        HotelReviewMock("Rudi Hartono", "Value for money, recommended!", 5)
-    )
 
     Scaffold(
         topBar = {
@@ -125,7 +117,7 @@ fun HotelDetailScreen(
 
                             item {
                                 description?.let {
-                                    Text("📝 Deskripsi", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                    Text("Deskripsi", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(it, style = MaterialTheme.typography.bodyLarge, lineHeight = 24.sp)
                                 }
@@ -133,7 +125,7 @@ fun HotelDetailScreen(
 
                             item {
                                 facilities?.let {
-                                    Text("✨ Fasilitas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                    Text("Fasilitas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(8.dp))
 
                                     val facilityList = it.split(",").map { f -> f.trim() }
@@ -178,16 +170,7 @@ fun HotelDetailScreen(
                     }
 
                     1 -> {
-                        // TAB ULASAN
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            item {
-                                Text("⭐ Ulasan Tamu (${mockReviews.size})", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                            }
 
-                            items(mockReviews) { review ->
-                                HotelReviewItem(review)
-                            }
-                        }
                     }
                 }
             }

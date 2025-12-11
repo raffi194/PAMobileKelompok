@@ -42,11 +42,12 @@ import com.example.pamobilekelompok.ui.events.BookingEventScreen
 import com.example.pamobilekelompok.ui.events.EventDetailScreen
 import com.example.pamobilekelompok.ui.events.EventScreen
 import com.example.pamobilekelompok.ui.foods.FoodScreen
-import com.example.pamobilekelompok.ui.hotels.HotelDetailScreen
 import com.example.pamobilekelompok.ui.hotels.HotelScreen
 import com.example.pamobilekelompok.ui.reviews.ReviewScreen
 import com.example.pamobilekelompok.ui.trips.TripScreen
 import com.example.pamobilekelompok.ui.theme.PAMobileKelompokTheme
+import com.example.pamobilekelompok.ui.booking.PaymentHotelScreen
+import com.example.pamobilekelompok.ui.hotels.HotelDetailScreen // ✅ JANGAN LUPA IMPORT INI
 
 // Import ViewModels
 import com.example.pamobilekelompok.viewmodel.AuthViewModel
@@ -111,10 +112,9 @@ class MainActivity : ComponentActivity() {
                             composable("home") {
                                 HomeScreen(
                                     authViewModel = authViewModel,
-                                    eventViewModel = eventViewModel, // Inject Event VM
+                                    eventViewModel = eventViewModel,
                                     onNavigateToFeature = { navController.navigate(it) },
                                     onNavigateToProfile = { navController.navigate("profile") },
-                                    // UPDATE 6: Navigasi Detail Event dari Home
                                     onNavigateToEventDetail = { event ->
                                         val encodedUrl = Uri.encode(event.posterUrl ?: "")
                                         val encodedDesc = Uri.encode(event.description)
@@ -201,7 +201,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- PAYMENT DESTINASI (UPDATED: Use PaymentScreen) ---
+                            // --- PAYMENT DESTINASI ---
                             composable(
                                 "payment/{bookingId}/{total}",
                                 arguments = listOf(
@@ -211,10 +211,9 @@ class MainActivity : ComponentActivity() {
                             ) { backStackEntry ->
                                 val id = backStackEntry.arguments?.getLong("bookingId") ?: 0L
                                 val total = backStackEntry.arguments?.getLong("total") ?: 0L
-                                val vm: BookingViewModel = viewModel() // Ambil VM Destinasi
+                                val vm: BookingViewModel = viewModel()
                                 val context = LocalContext.current
 
-                                // UPDATE 7: Pakai PaymentScreen Generic
                                 PaymentDestinationScreen(
                                     bookingId = id,
                                     totalPrice = total,
@@ -244,11 +243,13 @@ class MainActivity : ComponentActivity() {
                                         val encodedPrice = Uri.encode(hotel.price ?: "")
                                         val encodedDesc = Uri.encode(hotel.description ?: "")
                                         val encodedFacilities = Uri.encode(hotel.facilities ?: "")
+                                        // Pastikan URL tujuan benar
                                         navController.navigate("hotel_detail/${hotel.id}/${hotel.name}/$encodedAddress/$encodedPrice/$encodedDesc/$encodedFacilities/$encodedUrl")
                                     }
                                 )
                             }
-                            // ... Route Hotel Detail & Booking (Tetap sama, disingkat agar muat) ...
+
+                            // ✅ FIX: TAMBAHKAN ROUTE DETAIL HOTEL DI SINI
                             composable(
                                 route = "hotel_detail/{id}/{name}/{address}/{price}/{desc}/{facilities}/{url}",
                                 arguments = listOf(
@@ -278,44 +279,78 @@ class MainActivity : ComponentActivity() {
                                     facilities = facilities,
                                     imageUrl = url,
                                     onNavigateBack = { navController.popBackStack() },
-                                    onNavigateToBooking = { hotelId, hotelName, hotelPrice ->
-                                        val encodedName = Uri.encode(hotelName)
-                                        val encodedPrice = Uri.encode(hotelPrice ?: "")
-                                        navController.navigate("booking_hotel/$hotelId/$encodedName/$encodedPrice")
+                                    onNavigateToBooking = { hId, hName, hPrice ->
+                                        val safePrice = Uri.encode(hPrice ?: "0")
+                                        navController.navigate("booking_hotel/$hId/$hName/$safePrice")
                                     }
                                 )
                             }
+
+                            // --- BOOKING HOTEL ---
                             composable(
-                                route = "booking_hotel/{hotelId}/{hotelName}/{price}",
+                                "booking_hotel/{id}/{name}/{price}",
                                 arguments = listOf(
-                                    navArgument("hotelId") { type = NavType.LongType },
-                                    navArgument("hotelName") { type = NavType.StringType },
+                                    navArgument("id") { type = NavType.LongType },
+                                    navArgument("name") { type = NavType.StringType },
                                     navArgument("price") { type = NavType.StringType }
                                 )
                             ) { backStackEntry ->
-                                val hotelId = backStackEntry.arguments?.getLong("hotelId") ?: 0
-                                val hotelName = backStackEntry.arguments?.getString("hotelName") ?: ""
-                                val price = backStackEntry.arguments?.getString("price")
+                                val id = backStackEntry.arguments?.getLong("id") ?: 0L
+                                val name = backStackEntry.arguments?.getString("name") ?: ""
+                                val price = backStackEntry.arguments?.getString("price") ?: "0"
+                                val vm: BookingViewModel = viewModel() // Ambil VM
 
                                 HotelBookingScreen(
-                                    hotelId = hotelId,
-                                    hotelName = hotelName,
+                                    hotelId = id,
+                                    hotelName = name,
                                     pricePerNight = price,
+                                    viewModel = vm, // Gunakan VM yang benar
                                     onNavigateBack = { navController.popBackStack() },
-                                    onConfirmBooking = { navController.navigate("booking_hotel_success") }
+                                    onConfirmBooking = { bookingId, total ->
+                                        navController.navigate("payment_hotel/$bookingId/$total")
+                                    }
                                 )
                             }
+
+                            // --- PAYMENT HOTEL ---
+                            composable(
+                                route = "payment_hotel/{bookingId}/{totalPrice}",
+                                arguments = listOf(
+                                    navArgument("bookingId") { type = NavType.LongType },
+                                    navArgument("totalPrice") { type = NavType.LongType }
+                                )
+                            ) { backStackEntry ->
+                                val bookingId = backStackEntry.arguments?.getLong("bookingId") ?: 0
+                                val totalPrice = backStackEntry.arguments?.getLong("totalPrice") ?: 0
+                                val vm: BookingViewModel = viewModel() // Gunakan VM yang sama untuk update status
+                                val context = LocalContext.current
+
+                                // Gunakan PaymentHotelScreen
+                                PaymentHotelScreen(
+                                    bookingId = bookingId,
+                                    totalPrice = totalPrice,
+                                    viewModel = vm, // Kirim ViewModel
+                                    onPaymentSuccess = {
+                                        navController.navigate("booking_hotel_success")
+                                    }
+                                )
+                            }
+
                             composable("booking_hotel_success") {
-                                HotelBookingSuccessScreen(onNavigateHome = {
-                                    navController.navigate("home") { popUpTo("home") { inclusive = true } }
-                                })
+                                HotelBookingSuccessScreen(
+                                    onNavigateHome = {
+                                        navController.navigate("home") {
+                                            popUpTo("home") { inclusive = true }
+                                        }
+                                    }
+                                )
                             }
 
                             // --- ORDER HISTORY ---
                             composable("booking_list") {
+                                // ✅ FIX: Hapus parameter eventViewModel yang tidak ada
                                 OrderHistoryScreen(
-                                    bookingViewModel = viewModel(), // VM Destinasi
-                                    eventViewModel = eventViewModel, // VM Event
+                                    viewModel = viewModel(), // Cukup ini saja (BookingViewModel)
                                     onNavigateBack = { navController.popBackStack() },
                                     onNavigateToDetail = { booking ->
                                         val jsonBooking = Uri.encode(Json.encodeToString(booking))
@@ -368,9 +403,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // ==========================================
-                            //          FITUR EVENT (DIKEMBALIKAN)
-                            // ==========================================
+                            // --- EVENTS ---
                             composable("events") {
                                 EventScreen(
                                     viewModel = eventViewModel,
@@ -489,7 +522,6 @@ class MainActivity : ComponentActivity() {
                                 val total = backStackEntry.arguments?.getLong("total") ?: 0L
                                 val context = LocalContext.current
 
-                                // Menggunakan PaymentScreen yang sama
                                 PaymentDestinationScreen(
                                     bookingId = bookingId,
                                     totalPrice = total,
@@ -502,15 +534,13 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- PLACEHOLDERS ---
-                            // UPDATE 8: Uncomment jika FoodScreen sudah ada
+                            // --- FOODS ---
                             composable("foods") {
                                 FoodScreen(
                                     viewModel = foodViewModel,
                                     onNavigateBack = { navController.popBackStack() }
                                 )
                             }
-                            composable("reviews") { Text("Halaman Review") }
                         }
                     }
                 }
