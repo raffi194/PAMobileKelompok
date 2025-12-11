@@ -55,18 +55,15 @@ fun HotelScreen(
     var isEditMode by remember { mutableStateOf(false) }
     var currentEditingId by remember { mutableStateOf<Long?>(null) }
     var currentEditingImageUrl by remember { mutableStateOf<String?>(null) }
-
     // Delete Confirmation
     var hotelToDelete by remember { mutableStateOf<Hotel?>(null) }
 
     val context = LocalContext.current
-
     // Photo Picker Launcher
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri -> selectedImageUri = uri }
     )
-
     // Collect StateFlow dengan collectAsState
     val hotels by viewModel.hotels.collectAsState()
 
@@ -111,25 +108,17 @@ fun HotelScreen(
             if (viewModel.isLoading && !showDialog && hotelToDelete == null) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
-
             // ═══════ EMPTY STATE ═══════
             else if (hotels.isEmpty() && !viewModel.isLoading) {
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "🏨",
-                        style = MaterialTheme.typography.displayLarge
-                    )
+                    Text("🏨", style = MaterialTheme.typography.displayLarge)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Belum ada data hotel/homestay",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    Text("Belum ada data hotel", style = MaterialTheme.typography.bodyLarge)
                 }
             }
-
             // ═══════ GRID HOTEL LIST ═══════
             else {
                 LazyVerticalGrid(
@@ -180,68 +169,17 @@ fun HotelScreen(
                             .padding(8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Input Nama Hotel
-                        OutlinedTextField(
-                            value = name,
-                            onValueChange = { name = it },
-                            label = { Text("Nama Hotel *") },
-                            placeholder = { Text("Hotel Mewah Paradise") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-
+                        // Input
+                        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nama Hotel *") }, placeholder = { Text("Hotel Paradise") }, modifier = Modifier.fillMaxWidth(), singleLine = true, enabled = !viewModel.isLoading)
                         Spacer(modifier = Modifier.height(8.dp))
-
-                        // Input Alamat
-                        OutlinedTextField(
-                            value = address,
-                            onValueChange = { address = it },
-                            label = { Text("Alamat") },
-                            placeholder = { Text("Jl. Raya Kuta No. 123") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-
+                        OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Alamat") }, placeholder = { Text("Jl. Raya Kuta No. 123") }, modifier = Modifier.fillMaxWidth(), singleLine = true, enabled = !viewModel.isLoading)
                         Spacer(modifier = Modifier.height(8.dp))
-
-                        // Input Harga
-                        OutlinedTextField(
-                            value = price,
-                            onValueChange = { price = it },
-                            label = { Text("Harga") },
-                            placeholder = { Text("Rp 500.000/malam") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-
+                        OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Harga") }, placeholder = { Text("Rp 500.000/malam") }, modifier = Modifier.fillMaxWidth(), singleLine = true, enabled = !viewModel.isLoading)
                         Spacer(modifier = Modifier.height(8.dp))
-
-                        // Input Deskripsi
-                        OutlinedTextField(
-                            value = description,
-                            onValueChange = { description = it },
-                            label = { Text("Deskripsi") },
-                            placeholder = { Text("Hotel bintang 5 dengan pemandangan laut...") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp),
-                            maxLines = 3
-                        )
-
+                        OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Deskripsi") }, placeholder = { Text("Hotel bintang 5...") }, modifier = Modifier.fillMaxWidth().height(100.dp), maxLines = 3, enabled = !viewModel.isLoading)
                         Spacer(modifier = Modifier.height(8.dp))
-
-                        // Input Fasilitas
-                        OutlinedTextField(
-                            value = facilities,
-                            onValueChange = { facilities = it },
-                            label = { Text("Fasilitas") },
-                            placeholder = { Text("WiFi, AC, TV, Kolam Renang, Sarapan") },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 2
-                        )
-
+                        OutlinedTextField(value = facilities, onValueChange = { facilities = it }, label = { Text("Fasilitas") }, placeholder = { Text("WiFi, AC, TV, Kolam Renang") }, modifier = Modifier.fillMaxWidth(), maxLines = 2, enabled = !viewModel.isLoading)
                         Spacer(modifier = Modifier.height(16.dp))
-
                         // Tombol Pilih Foto
                         Button(
                             onClick = {
@@ -252,8 +190,8 @@ fun HotelScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                if (selectedImageUri == null) "📷 Pilih Foto"
-                                else "✅ Ganti Foto"
+                                if (selectedImageUri == null) "Pilih Foto"
+                                else "Ganti Foto"
                             )
                         }
 
@@ -271,7 +209,7 @@ fun HotelScreen(
                                 contentScale = ContentScale.Crop
                             )
                             Text(
-                                "✨ Foto Baru",
+                                "Foto Baru",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -286,7 +224,7 @@ fun HotelScreen(
                                 contentScale = ContentScale.Crop
                             )
                             Text(
-                                "📸 Foto Saat Ini",
+                                "Foto Saat Ini",
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -330,7 +268,7 @@ fun HotelScreen(
                                     } else {
                                         Toast.makeText(
                                             context,
-                                            "⚠️ Foto wajib dipilih!",
+                                            "Foto wajib dipilih!",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
@@ -338,30 +276,27 @@ fun HotelScreen(
                             } else {
                                 Toast.makeText(
                                     context,
-                                    "⚠️ Nama hotel wajib diisi!",
+                                    "Nama hotel wajib diisi!",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
                         }
                     ) {
-                        Text("💾 Simpan")
+                        Text("Simpan")
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDialog = false }) {
-                        Text("❌ Batal")
+                        Text("Batal")
                     }
                 }
             )
         }
-
-        // ═══════════════════════════════════════════════════════════
         // 🗑️ DIALOG KONFIRMASI HAPUS
-        // ═══════════════════════════════════════════════════════════
         if (hotelToDelete != null) {
             AlertDialog(
                 onDismissRequest = { hotelToDelete = null },
-                title = { Text("🗑️ Hapus Hotel?") },
+                title = { Text("Hapus Hotel?") },
                 text = {
                     Text("Apakah Anda yakin ingin menghapus '${hotelToDelete?.name}'?")
                 },
@@ -387,89 +322,28 @@ fun HotelScreen(
         }
     }
 }
-
-// ═══════════════════════════════════════════════════════════
 // 🏨 HOTEL ITEM COMPONENT
-// ═══════════════════════════════════════════════════════════
 @Composable
-fun HotelItem(
-    hotel: Hotel,
-    isAdmin: Boolean,
-    onClick: () -> Unit,
-    onDeleteClick: () -> Unit,
-    onEditClick: () -> Unit
-) {
-    Card(
-        elevation = CardDefaults.cardElevation(4.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-    ) {
+fun HotelItem(hotel: Hotel, isAdmin: Boolean, onClick: () -> Unit, onDeleteClick: () -> Unit, onEditClick: () -> Unit) {
+    Card(elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.clickable { onClick() }) {
         Box {
             Column {
-                // Gambar Hotel
-                AsyncImage(
-                    model = hotel.imageUrl,
-                    contentDescription = hotel.name,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    contentScale = ContentScale.Crop
-                )
-
-                // Info Hotel
+                AsyncImage(model = hotel.imageUrl, contentDescription = hotel.name, modifier = Modifier.fillMaxWidth().height(120.dp), contentScale = ContentScale.Crop)
                 Column(modifier = Modifier.padding(8.dp)) {
-                    Text(
-                        text = hotel.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
-                    )
-
+                    Text(text = hotel.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
                     hotel.price?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Text(text = it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
-
-            // Tombol Admin (Edit & Delete)
             if (isAdmin) {
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                ) {
-                    // Edit Button
-                    IconButton(
-                        onClick = onEditClick,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
-                            tint = Color(0xFFFFA000)
-                        )
-                    }
-
+                Row(modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)) {
+                    IconButton(onClick = onEditClick, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Edit, "Edit", tint = Color(0xFFFFA000)) }
                     Spacer(modifier = Modifier.width(4.dp))
-
-                    // Delete Button
-                    IconButton(
-                        onClick = onDeleteClick,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Hapus",
-                            tint = Color.Red
-                        )
-                    }
+                    IconButton(onClick = onDeleteClick, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Delete, "Hapus", tint = Color.Red) }
                 }
             }
         }
     }
 }
+
