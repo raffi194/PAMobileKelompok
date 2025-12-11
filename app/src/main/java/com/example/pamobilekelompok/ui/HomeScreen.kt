@@ -11,7 +11,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Star
@@ -85,7 +84,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- 2. FITUR UTAMA (3 KOLOM) ---
+        // --- 2. FITUR UTAMA (4 KOLOM - Menggunakan Layout Teman agar ada Komunitas) ---
         Text("Jelajahi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -97,11 +96,35 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween // Mengatur jarak agar 4 item muat rapi
             ) {
-                FeatureItem(icon = Icons.Default.Place, label = "Destinasi", onClick = { onNavigateToFeature("destinations") })
-                FeatureItem(icon = Icons.Default.Star, label = "Kuliner", onClick = { onNavigateToFeature("foods") })
-                FeatureItem(icon = Icons.Default.Home, label = "Penginapan", onClick = { onNavigateToFeature("hotels") })
+                // Feature 1: Destinasi
+                FeatureItem(
+                    icon = Icons.Default.Place,
+                    label = "Destinasi",
+                    onClick = { onNavigateToFeature("destinations") }
+                )
+
+                // Feature 2: Kuliner
+                FeatureItem(
+                    icon = Icons.Default.Star,
+                    label = "Kuliner",
+                    onClick = { onNavigateToFeature("foods") }
+                )
+
+                // Feature 3: Hotel
+                FeatureItem(
+                    icon = Icons.Default.Home,
+                    label = "Hotel",
+                    onClick = { onNavigateToFeature("hotels") }
+                )
+
+                // Feature 4: Komunitas (Trip)
+                FeatureItem(
+                    icon = Icons.Default.Person,
+                    label = "Komunitas",
+                    onClick = { onNavigateToFeature("trips") }
+                )
             }
         }
 
@@ -119,19 +142,35 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- 4. TRIP DOCS ---
-        Text("Dokumentasi Trip", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        // --- 4. PESANAN SAYA (Menggunakan Desain Anda yang Lebih Detail) ---
+        Text("Pesanan Saya", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
 
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp)
-                .clickable { onNavigateToFeature("trips") },
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                .height(100.dp) // Compact size
+                .clickable { onNavigateToFeature("booking_list") }, // Route ke History
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)), // Warna biru muda
+            elevation = CardDefaults.cardElevation(2.dp)
         ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Lihat Galeri Perjalanan", fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text("Cek Status Pesanan", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Lihat detail & bayar tagihan", fontSize = 12.sp, color = Color.Gray)
+                }
+                Icon(
+                    imageVector = Icons.Default.DateRange,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
 
@@ -139,13 +178,13 @@ fun HomeScreen(
     }
 }
 
-// Komponen Kecil untuk Menu Utama
+// Komponen Kecil untuk Menu Utama (Ukuran 56dp agar muat 4 kolom)
 @Composable
 fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { onClick() }) {
         Box(
             modifier = Modifier
-                .size(60.dp)
+                .size(56.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center
@@ -153,7 +192,11 @@ fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit) {
             Icon(imageVector = icon, contentDescription = null, tint = Color.White)
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
