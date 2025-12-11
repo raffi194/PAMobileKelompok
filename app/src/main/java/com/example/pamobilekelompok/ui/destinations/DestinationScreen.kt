@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -39,6 +41,8 @@ fun DestinationScreen(
     // State Form
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    // State Harga (String agar bisa diedit di TextField)
+    var priceInput by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showDialog by remember { mutableStateOf(false) }
 
@@ -78,6 +82,7 @@ fun DestinationScreen(
                     isEditMode = false
                     name = ""
                     description = ""
+                    priceInput = "" // Reset harga
                     selectedImageUri = null
                     currentEditingId = null
                     currentEditingImageUrl = null
@@ -116,6 +121,8 @@ fun DestinationScreen(
                                 currentEditingId = destination.id
                                 name = destination.name
                                 description = destination.description ?: ""
+                                // Load harga lama ke input
+                                priceInput = destination.price?.toString() ?: ""
                                 currentEditingImageUrl = destination.imageUrl
                                 selectedImageUri = null // Reset gambar baru
                                 showDialog = true
@@ -145,6 +152,17 @@ fun DestinationScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
+
+                        // Input Harga
+                        OutlinedTextField(
+                            value = priceInput,
+                            onValueChange = { priceInput = it },
+                            label = { Text("Harga Tiket (Rp)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
                         OutlinedTextField(
                             value = description,
                             onValueChange = { description = it },
@@ -193,6 +211,9 @@ fun DestinationScreen(
                 },
                 confirmButton = {
                     Button(onClick = {
+                        // Konversi Harga
+                        val priceLong = priceInput.toLongOrNull() ?: 0L
+
                         if (name.isNotEmpty()) {
                             if (isEditMode) {
                                 // --- MODE UPDATE ---
@@ -201,6 +222,7 @@ fun DestinationScreen(
                                         id = currentEditingId!!,
                                         name = name,
                                         description = description,
+                                        price = priceLong, // Kirim Harga Baru
                                         newImageUri = selectedImageUri, // Bisa null
                                         currentImageUrl = currentEditingImageUrl,
                                         context = context
@@ -212,7 +234,11 @@ fun DestinationScreen(
                                 // --- MODE CREATE ---
                                 if (selectedImageUri != null) {
                                     viewModel.uploadDestination(
-                                        name, description, selectedImageUri!!, context
+                                        name,
+                                        description,
+                                        priceLong, // Kirim Harga
+                                        selectedImageUri!!,
+                                        context
                                     ) {
                                         showDialog = false
                                     }
