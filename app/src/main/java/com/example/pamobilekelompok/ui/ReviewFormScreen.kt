@@ -17,10 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.pamobilekelompok.viewmodel.ReviewViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +35,7 @@ fun ReviewScreen(
 
     val context = LocalContext.current
 
-    // Photo Picker Launcher
+    // Photo Picker
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri -> selectedImageUri = uri }
@@ -60,22 +60,18 @@ fun ReviewScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            Text(
-                text = "Tulis ulasan untuk:",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text("Tulis ulasan untuk:", style = MaterialTheme.typography.titleMedium)
             Text(
                 text = destinationName,
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Rating Bintang
             Text("Rating:", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 repeat(5) { index ->
                     IconButton(onClick = { rating = index + 1 }) {
@@ -96,36 +92,27 @@ fun ReviewScreen(
                 value = reviewText,
                 onValueChange = { reviewText = it },
                 label = { Text("Pendapat Anda") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp),
+                modifier = Modifier.fillMaxWidth().height(150.dp),
                 maxLines = 5
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Tombol Pilih Foto (Opsional)
+            // Tombol Foto
             Button(
-                onClick = {
-                    photoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
+                onClick = { photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (selectedImageUri == null) "Tambah Foto (Opsional)" else "Ganti Foto")
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             // Preview Foto
             selectedImageUri?.let { uri ->
+                Spacer(modifier = Modifier.height(8.dp))
                 AsyncImage(
                     model = uri,
-                    contentDescription = "Preview Foto",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
+                    contentDescription = "Preview",
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
                     contentScale = ContentScale.Crop
                 )
             }
@@ -139,6 +126,7 @@ fun ReviewScreen(
                 Button(
                     onClick = {
                         if (reviewText.isNotEmpty()) {
+                            // Panggil fungsi addReview yang sudah kita buat di ViewModel
                             viewModel.addReview(
                                 destinationName = destinationName,
                                 rating = rating,
@@ -147,9 +135,12 @@ fun ReviewScreen(
                                 context = context,
                                 onSuccess = { onNavigateBack() }
                             )
+                        } else {
+                            // Pesan jika komentar kosong
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = reviewText.isNotEmpty()
                 ) {
                     Text("Kirim Ulasan")
                 }
