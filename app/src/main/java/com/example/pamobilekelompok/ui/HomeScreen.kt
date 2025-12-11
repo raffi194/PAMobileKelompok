@@ -120,18 +120,32 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // --- 4. TRIP DOCS ---
-        Text("Dokumentasi Trip", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Pesanan Saya", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
 
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp)
-                .clickable { onNavigateToFeature("trips") },
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                .height(100.dp) // Sedikit lebih compact
+                .clickable { onNavigateToFeature("booking_list") },
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)), // Warna biru muda
+            elevation = CardDefaults.cardElevation(2.dp)
         ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Lihat Galeri Perjalanan", fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text("Cek Status Pesanan", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Lihat detail & bayar tagihan", fontSize = 12.sp, color = Color.Gray)
+                }
+                Icon(
+                    imageVector = Icons.Default.DateRange, // Icon Kalender/List
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
 
