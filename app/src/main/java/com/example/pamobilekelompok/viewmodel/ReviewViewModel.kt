@@ -1,7 +1,9 @@
 package com.example.pamobilekelompok.viewmodel
 
+import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
+import android.os.Environment
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -10,7 +12,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pamobilekelompok.data.SupabaseClient
 import com.example.pamobilekelompok.model.Review
-import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
@@ -24,31 +25,29 @@ class ReviewViewModel : ViewModel() {
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
-    // --- AMBIL SEMUA REVIEW BERDASARKAN DESTINASI ---
-    fun getReviewsByDestination(destinationName: String) {
+    fun getReviews(destinationId: Long) {
         viewModelScope.launch {
             try {
                 isLoading = true
-                errorMessage = null
-                val result = SupabaseClient.client.from("reviews")
+                val result = SupabaseClient.client.from("review")
                     .select {
                         filter {
-                            eq("destination_name", destinationName)
+                            eq("destination_id", destinationId)
                         }
-                        order("created_at", Order.DESCENDING)
+                        order("id", Order.DESCENDING)
                     }.decodeList<Review>()
                 reviews = result
             } catch (e: Exception) {
-                errorMessage = "Gagal memuat ulasan: ${e.message}"
+                errorMessage = "Gagal memuat review: ${e.message}"
             } finally {
                 isLoading = false
             }
         }
     }
 
-    // --- TAMBAH REVIEW BARU (DENGAN FOTO OPSIONAL) ---
-    fun addReview(
-        destinationName: String,
+    fun submitReview(
+        destinationId: Long,
+        userName: String,
         rating: Int,
         comment: String,
         imageUri: Uri?,
@@ -58,14 +57,8 @@ class ReviewViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 isLoading = true
+                var finalImageUrl: String? = null
 
-                // Ambil User ID dari Session
-                val userId = SupabaseClient.client.auth.currentUserOrNull()?.id
-                    ?: throw Exception("User belum login")
-
-                var imageUrl: String? = null
-
-                // Upload Foto (Jika Ada)
                 if (imageUri != null) {
                     val inputStream = context.contentResolver.openInputStream(imageUri)
                     val bytes = inputStream?.readBytes()
@@ -73,38 +66,56 @@ class ReviewViewModel : ViewModel() {
 
                     if (bytes != null) {
                         val fileName = "review_${System.currentTimeMillis()}.jpg"
-                        val bucket = SupabaseClient.client.storage.from("reviews")
+                        val bucket = SupabaseClient.client.storage.from("review")
                         bucket.upload(fileName, bytes)
-                        imageUrl = bucket.publicUrl(fileName)
+                        finalImageUrl = bucket.publicUrl(fileName)
                     }
                 }
 
-                // Insert ke Database
                 val newReview = Review(
-                    userId = userId,
-                    destinationName = destinationName,
+                    destinationId = destinationId,
+                    userName = userName,
                     rating = rating,
                     comment = comment,
-                    imageUrl = imageUrl
+                    imageUrl = finalImageUrl
                 )
 
-                SupabaseClient.client.from("reviews").insert(newReview)
+                SupabaseClient.client.from("review").insert(newReview)
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Ulasan berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Ulasan terkirim!", Toast.LENGTH_SHORT).show()
                 }
-
-                // Refresh data
-                getReviewsByDestination(destinationName)
                 onSuccess()
 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Gagal menambah ulasan: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Gagal kirim", Toast.LENGTH_LONG).show()
                 }
             } finally {
                 isLoading = false
             }
+        }
+    }
+
+    fun downloadReviewImage(context: Context, url: String) {
+        try {
+            val request = DownloadManager.Request(Uri.parse(url))
+                .setTitle("Foto Review")
+                .setDescription("Mengunduh foto ulasan...")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(
+                    Environment.DIRECTORY_PICTURES,
+                    "Review_${System.currentTimeMillis()}.jpg"
+                )
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(true)
+
+            val downloadManager =
+                context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            downloadManager.enqueue(request)
+            Toast.makeText(context, "Mulai mengunduh...", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Gagal download: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 }
