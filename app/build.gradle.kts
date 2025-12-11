@@ -1,3 +1,4 @@
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -40,9 +41,7 @@ android {
 }
 
 dependencies {
-    // --- PERBAIKAN: Cukup satu baris ini saja ---
-    implementation(libs.extended.icons)
-
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

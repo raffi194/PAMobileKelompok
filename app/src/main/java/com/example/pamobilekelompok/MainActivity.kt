@@ -28,6 +28,8 @@ import com.example.pamobilekelompok.ui.destinations.DestinationScreen
 import com.example.pamobilekelompok.ui.reviews.ReviewScreen
 import com.example.pamobilekelompok.ui.theme.PAMobileKelompokTheme
 import com.example.pamobilekelompok.viewmodel.AuthViewModel
+import com.example.pamobilekelompok.ui.hotels.HotelDetailScreen
+import com.example.pamobilekelompok.ui.hotels.HotelScreen
 import io.github.jan.supabase.auth.auth
 
 class MainActivity : ComponentActivity() {
@@ -101,6 +103,52 @@ class MainActivity : ComponentActivity() {
                                         val encodedDesc = Uri.encode(destination.description ?: "")
                                         navController.navigate("destination_detail/${destination.name}/$encodedDesc/$encodedUrl")
                                     }
+                                )
+                            }
+                            //route hotel
+                            composable("hotels") {
+                                HotelScreen(
+                                    isAdmin = authViewModel.isAdmin,
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onNavigateToDetail = { hotel ->
+                                        val encodedUrl = Uri.encode(hotel.imageUrl ?: "")
+                                        val encodedAddress = Uri.encode(hotel.address ?: "")
+                                        val encodedPrice = Uri.encode(hotel.price ?: "")
+                                        val encodedDesc = Uri.encode(hotel.description ?: "")
+                                        val encodedFacilities = Uri.encode(hotel.facilities ?: "")
+                                        navController.navigate(
+                                            "hotel_detail/${hotel.name}/$encodedAddress/$encodedPrice/$encodedDesc/$encodedFacilities/$encodedUrl"
+                                        )
+                                    }
+                                )
+                            }
+
+                            composable(
+                                route = "hotel_detail/{name}/{address}/{price}/{desc}/{facilities}/{url}",
+                                arguments = listOf(
+                                    navArgument("name") { type = NavType.StringType },
+                                    navArgument("address") { type = NavType.StringType },
+                                    navArgument("price") { type = NavType.StringType },
+                                    navArgument("desc") { type = NavType.StringType },
+                                    navArgument("facilities") { type = NavType.StringType },
+                                    navArgument("url") { type = NavType.StringType }
+                                )
+                            ) { backStackEntry ->
+                                val name = backStackEntry.arguments?.getString("name") ?: ""
+                                val address = backStackEntry.arguments?.getString("address")
+                                val price = backStackEntry.arguments?.getString("price")
+                                val desc = backStackEntry.arguments?.getString("desc")
+                                val facilities = backStackEntry.arguments?.getString("facilities")
+                                val url = backStackEntry.arguments?.getString("url")
+
+                                HotelDetailScreen(
+                                    name = name,
+                                    address = address,
+                                    price = price,
+                                    description = desc,
+                                    facilities = facilities,
+                                    imageUrl = url,
+                                    onNavigateBack = { navController.popBackStack() }
                                 )
                             }
                             // ... (Route lain tetap sama) ...
