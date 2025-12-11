@@ -296,8 +296,11 @@ fun TripCard(
             AsyncImage(
                 model = trip.mediaUrl,
                 contentDescription = null,
-                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
-                contentScale = ContentScale.FillWidth
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(3f / 4f) // 1. Paksa rasio menjadi 4:3 (Landscape)
+                    .clip(RoundedCornerShape(8.dp)), // 2. (Opsional) Beri sedikit lengkungan sudut agar manis
+                contentScale = ContentScale.Crop // 3. Potong (Crop) bagian atas/bawah agar gambar mengisi kotak 4:3 penuh
             )
 
             Column(modifier = Modifier.padding(12.dp)) {
