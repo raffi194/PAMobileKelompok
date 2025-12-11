@@ -9,6 +9,6 @@ data class Event(
     val title: String,
     val description: String,
     @SerialName("event_date") val eventDate: String,
-    @SerialName("poster_url") val posterUrl: String? = null
+    @SerialName("poster_url") val posterUrl: String? = null,
+    val price: Long = 0
 )
-

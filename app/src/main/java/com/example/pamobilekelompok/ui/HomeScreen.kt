@@ -39,7 +39,8 @@ fun HomeScreen(
     authViewModel: AuthViewModel = viewModel(),
     eventViewModel: EventViewModel = viewModel(),
     onNavigateToFeature: (String) -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToEventDetail: (Event) -> Unit
 ) {
     // Ambil data user agar nama tampil
     LaunchedEffect(Unit) {
@@ -198,7 +199,10 @@ fun HomeScreen(
                 contentPadding = PaddingValues(horizontal = 4.dp)
             ) {
                 items(eventViewModel.events) { event ->
-                    EventCard(event = event)
+                    EventCard(
+                        event = event,
+                        onClick = { onNavigateToEventDetail(event) }
+                    )
                 }
             }
         }
@@ -265,16 +269,19 @@ fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit) {
 
 // Komponen Dummy Event Card
 @Composable
-fun EventCard(event: Event) {
+fun EventCard(
+    event: Event,
+    onClick: () -> Unit // Tambahkan parameter onClick
+) {
     Card(
         modifier = Modifier
             .width(160.dp)
-            .height(220.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .height(220.dp)
+            .clickable { onClick() }, // Pasang clickable di sini
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column {
-            // 1. Gambar Event dari URL
             AsyncImage(
                 model = event.posterUrl,
                 contentDescription = event.title,
@@ -283,8 +290,6 @@ fun EventCard(event: Event) {
                     .height(120.dp),
                 contentScale = ContentScale.Crop
             )
-
-            // 2. Info Teks
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
                     text = event.title,
@@ -295,7 +300,7 @@ fun EventCard(event: Event) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = event.eventDate, // Format tanggal dari database
+                    text = event.eventDate,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )

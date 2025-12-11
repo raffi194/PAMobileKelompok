@@ -1,7 +1,7 @@
 package com.example.pamobilekelompok.ui.booking
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable // Import ini penting
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,8 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,20 +17,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pamobilekelompok.model.EventBooking
 import com.example.pamobilekelompok.viewmodel.Booking
 import com.example.pamobilekelompok.viewmodel.BookingViewModel
+import com.example.pamobilekelompok.viewmodel.EventViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderHistoryScreen(
-    viewModel: BookingViewModel = viewModel(),
+    bookingViewModel: BookingViewModel = viewModel(),
+    eventViewModel: EventViewModel = viewModel(), // Inject Event ViewModel
     onNavigateBack: () -> Unit,
-    onNavigateToDetail: (Booking) -> Unit // Callback baru: Buka Detail
+    onNavigateToDetail: (Booking) -> Unit,
+    // Callback opsional jika ingin detail event (sementara bisa dikosongkan)
+    onNavigateToEventDetail: (EventBooking) -> Unit = {}
 ) {
+    // State Tab (0 = Wisata, 1 = Event)
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Wisata", "Event")
+
+    // Ambil data saat layar dibuka
     LaunchedEffect(Unit) {
-        viewModel.getUserBookings()
+        bookingViewModel.getUserBookings()
+        eventViewModel.getUserEventBookings() // Panggil fungsi baru tadi
     }
 
     Scaffold(
@@ -46,36 +56,81 @@ fun OrderHistoryScreen(
             )
         }
     ) { innerPadding ->
-        if (viewModel.isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else if (viewModel.bookingList.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Belum ada riwayat pesanan.")
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.padding(innerPadding).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(viewModel.bookingList) { booking ->
-                    BookingItem(
-                        booking = booking,
-                        onClick = { onNavigateToDetail(booking) } // Trigger klik
+        Column(modifier = Modifier.padding(innerPadding)) {
+
+            // --- TAB ROW ---
+            TabRow(selectedTabIndex = selectedTab) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = { Text(title) }
                     )
+                }
+            }
+
+            // --- ISI KONTEN ---
+            Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                if (selectedTab == 0) {
+                    // === LIST DESTINASI ===
+                    if (bookingViewModel.isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    } else if (bookingViewModel.bookingList.isEmpty()) {
+                        Text("Belum ada pesanan wisata.", modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(bookingViewModel.bookingList) { booking ->
+                                BookingItem(
+                                    title = booking.destination_name,
+                                    date = booking.visit_date,
+                                    count = booking.ticket_count,
+                                    total = booking.total_price,
+                                    status = booking.status,
+                                    onClick = { onNavigateToDetail(booking) }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // === LIST EVENT (BARU) ===
+                    if (eventViewModel.isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    } else if (eventViewModel.eventBookings.isEmpty()) {
+                        Text("Belum ada pesanan event.", modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(eventViewModel.eventBookings) { eventBooking ->
+                                BookingItem(
+                                    title = eventBooking.eventTitle,
+                                    date = eventBooking.bookingDate,
+                                    count = eventBooking.ticketCount,
+                                    total = eventBooking.totalPrice,
+                                    status = eventBooking.status, // "Menunggu Pembayaran" akan muncul di sini
+                                    onClick = { onNavigateToEventDetail(eventBooking) }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 }
 
+// Komponen Card yang Disederhanakan (Bisa dipakai Destination & Event)
 @Composable
-fun BookingItem(booking: Booking, onClick: () -> Unit) {
+fun BookingItem(
+    title: String,
+    date: String,
+    count: Int,
+    total: Long,
+    status: String,
+    onClick: () -> Unit
+) {
     Card(
         elevation = CardDefaults.cardElevation(4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.clickable { onClick() } // Klik card buka detail
+        modifier = Modifier.clickable { onClick() }
     ) {
         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
             Row(
@@ -83,12 +138,8 @@ fun BookingItem(booking: Booking, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = booking.destination_name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                StatusBadge(status = booking.status)
+                Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                StatusBadge(status = status)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -97,18 +148,18 @@ fun BookingItem(booking: Booking, onClick: () -> Unit) {
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Tanggal:", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                Text(booking.visit_date, style = MaterialTheme.typography.bodyMedium)
+                Text(date, style = MaterialTheme.typography.bodyMedium)
             }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Tiket:", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                Text("${booking.ticket_count}x", style = MaterialTheme.typography.bodyMedium)
+                Text("$count x", style = MaterialTheme.typography.bodyMedium)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Total: ${formatRupiah2(booking.total_price)}",
+                text = "Total: ${formatRupiah2(total)}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -120,8 +171,17 @@ fun BookingItem(booking: Booking, onClick: () -> Unit) {
 
 @Composable
 fun StatusBadge(status: String) {
-    val bgColor = if (status == "Lunas") Color(0xFFE8F5E9) else Color(0xFFFFF3E0)
-    val textColor = if (status == "Lunas") Color(0xFF2E7D32) else Color(0xFFEF6C00)
+    // Logika warna: Lunas (Hijau), Menunggu Pembayaran (Orange/Kuning)
+    val bgColor = when(status) {
+        "Lunas" -> Color(0xFFE8F5E9)
+        "Menunggu Pembayaran" -> Color(0xFFFFF3E0)
+        else -> Color.LightGray
+    }
+    val textColor = when(status) {
+        "Lunas" -> Color(0xFF2E7D32)
+        "Menunggu Pembayaran" -> Color(0xFFEF6C00)
+        else -> Color.Black
+    }
 
     Box(
         modifier = Modifier

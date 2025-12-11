@@ -16,14 +16,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
-import com.example.pamobilekelompok.viewmodel.BookingViewModel
 
 @Composable
 fun PaymentDestinationScreen(
     bookingId: Long,
     totalPrice: Long,
-    viewModel: BookingViewModel = viewModel(),
-    onPaymentSuccess: () -> Unit
+    isLoading: Boolean,      // Parameter Baru: Status Loading dari luar
+    onPayClicked: () -> Unit // Parameter Baru: Aksi saat tombol ditekan
 ) {
     val context = LocalContext.current
     val qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=BayarTagihan-$bookingId"
@@ -55,11 +54,12 @@ fun PaymentDestinationScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        if (viewModel.isLoading) {
+        // Cek status loading yang dikirim dari luar
+        if (isLoading) {
             CircularProgressIndicator()
         } else {
             Button(
-                onClick = { viewModel.updatePaymentStatus(bookingId, context) { onPaymentSuccess() } },
+                onClick = onPayClicked, // Panggil aksi dari luar
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
             ) {

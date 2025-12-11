@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -21,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -39,24 +41,24 @@ fun AddEventScreen(
     initialTitle: String = "",
     initialDesc: String = "",
     initialDate: String = "",
+    initialPrice: String = "", // <--- Parameter Awal Harga (String agar mudah di input)
     initialImageUrl: String? = null
 ) {
     val isEditMode = eventId != null && eventId > 0
 
-    // Isi state awal dengan data yang dikirim (jika ada)
     var title by rememberSaveable { mutableStateOf(initialTitle) }
     var description by rememberSaveable { mutableStateOf(initialDesc) }
 
-    // Tampilan Tanggal
+    // State Harga
+    var price by rememberSaveable { mutableStateOf(initialPrice) }
+
     var eventDateDisplay by rememberSaveable { mutableStateOf(initialDate) }
-    // Data Database (Jika edit, kita pakai data awal dulu, nanti diupdate datepicker)
     var eventDateDb by rememberSaveable { mutableStateOf(initialDate) }
 
     var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
-    // Date Picker Logic
     val datePickerDialog = DatePickerDialog(
         context,
         { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
@@ -100,10 +102,8 @@ fun AddEventScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (imageUri != null) {
-                    // Gambar Baru yang dipilih user
                     AsyncImage(model = imageUri, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 } else if (initialImageUrl != null) {
-                    // Gambar Lama (saat mode Edit)
                     AsyncImage(model = initialImageUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 } else {
                     OutlinedButton(onClick = { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
@@ -111,7 +111,6 @@ fun AddEventScreen(
                     }
                 }
             }
-            // Tombol Ganti Gambar
             if (imageUri != null || initialImageUrl != null) {
                 TextButton(onClick = { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                     Text("Ganti Gambar")
@@ -120,10 +119,26 @@ fun AddEventScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- FORM ---
+            // --- FORM INPUT ---
             OutlinedTextField(
                 value = title, onValueChange = { title = it },
                 label = { Text("Judul Event") }, modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // --- INPUT HARGA (BARU) ---
+            OutlinedTextField(
+                value = price,
+                onValueChange = {
+                    // Hanya izinkan angka
+                    if (it.all { char -> char.isDigit() }) {
+                        price = it
+                    }
+                },
+                label = { Text("Harga Tiket (Rp)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                placeholder = { Text("0") }
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -152,7 +167,11 @@ fun AddEventScreen(
             // --- TOMBOL AKSI ---
             Button(
                 onClick = {
-                    if (title.isNotBlank() && description.isNotBlank() && eventDateDb.isNotBlank()) {
+                    // Validasi input
+                    if (title.isNotBlank() && description.isNotBlank() && eventDateDb.isNotBlank() && price.isNotBlank()) {
+
+                        val priceLong = price.toLongOrNull() ?: 0L
+
                         if (isEditMode) {
                             // UPDATE
                             viewModel.updateEvent(
@@ -160,6 +179,7 @@ fun AddEventScreen(
                                 title = title,
                                 desc = description,
                                 date = eventDateDb,
+                                price = priceLong, // <--- Kirim Harga
                                 newImageUri = imageUri,
                                 currentImageUrl = initialImageUrl,
                                 context = context,
@@ -170,7 +190,15 @@ fun AddEventScreen(
                             if (imageUri == null) {
                                 Toast.makeText(context, "Pilih gambar dulu!", Toast.LENGTH_SHORT).show()
                             } else {
-                                viewModel.uploadEvent(title, description, eventDateDb, imageUri, context, onNavigateBack)
+                                viewModel.uploadEvent(
+                                    title,
+                                    description,
+                                    eventDateDb,
+                                    priceLong, // <--- Kirim Harga
+                                    imageUri,
+                                    context,
+                                    onNavigateBack
+                                )
                             }
                         }
                     } else {
