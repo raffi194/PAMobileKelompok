@@ -24,6 +24,7 @@ class EventViewModel : ViewModel() {
     var events by mutableStateOf<List<Event>>(emptyList())
     var isLoading by mutableStateOf(false)
 
+    // read
     fun getEvents() {
         viewModelScope.launch {
             try {
@@ -41,12 +42,12 @@ class EventViewModel : ViewModel() {
         }
     }
 
-    // --- UPDATED: TAMBAH PARAMETER PRICE ---
+    // create
     fun uploadEvent(
         title: String,
         desc: String,
         date: String,
-        price: Long, // <--- Parameter Baru
+        price: Long,
         imageUrl: Uri?,
         context: Context,
         onSuccess: () -> Unit
@@ -75,7 +76,7 @@ class EventViewModel : ViewModel() {
                     title = title,
                     description = desc,
                     eventDate = date,
-                    price = price, // <--- Simpan Harga
+                    price = price,
                     posterUrl = publicUrl
                 )
 
@@ -129,13 +130,13 @@ class EventViewModel : ViewModel() {
         }
     }
 
-    // --- UPDATED: TAMBAH PARAMETER PRICE ---
+    // update
     fun updateEvent(
         id: Long,
         title: String,
         desc: String,
         date: String,
-        price: Long, // <--- Parameter Baru
+        price: Long,
         newImageUri: Uri?,
         currentImageUrl: String?,
         context: Context,
@@ -166,7 +167,7 @@ class EventViewModel : ViewModel() {
                     title = title,
                     description = desc,
                     eventDate = date,
-                    price = price, // <--- Update Harga
+                    price = price,
                     posterUrl = finalImageUrl
                 )
 
@@ -190,6 +191,7 @@ class EventViewModel : ViewModel() {
         }
     }
 
+    // booking
     fun bookEvent(
         event: Event,
         bookingDate: String,
@@ -219,10 +221,9 @@ class EventViewModel : ViewModel() {
                     bookingDate = bookingDate,
                     ticketCount = ticketCount,
                     totalPrice = totalPrice,
-                    status = "Menunggu Pembayaran" // Status Awal
+                    status = "Menunggu Pembayaran" // state awal
                 )
 
-                // PENTING: Tambahkan { select() } agar Supabase mengembalikan data yang baru diinsert (termasuk ID)
                 val result = SupabaseClient.client.from("event_bookings")
                     .insert(newBooking) { select() }
                     .decodeSingle<EventBooking>()
@@ -232,7 +233,7 @@ class EventViewModel : ViewModel() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Pesanan Dibuat! Silakan Bayar.", Toast.LENGTH_SHORT).show()
                 }
-                onSuccess(bookingId) // Kirim ID ke layar Payment
+                onSuccess(bookingId) // untuk krim ID ke layar Payment
 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -245,14 +246,14 @@ class EventViewModel : ViewModel() {
         }
     }
 
-    // --- FUNGSI UPDATE PEMBAYARAN (BARU) ---
+    // update booking
     fun updatePaymentStatus(bookingId: Long, context: Context, onSuccess: () -> Unit) {
         if (isLoading) return
         isLoading = true
 
         viewModelScope.launch {
             try {
-                // Update status jadi "Lunas" di tabel event_bookings
+                // upadte status jadi "Lunas" di tabel event_bookings
                 SupabaseClient.client.from("event_bookings").update(
                     { set("status", "Lunas") }
                 ) {
@@ -275,28 +276,28 @@ class EventViewModel : ViewModel() {
     }
 
     // Variabel penampung list history event
-    var eventBookings by mutableStateOf<List<EventBooking>>(emptyList())
+//    var eventBookings by mutableStateOf<List<EventBooking>>(emptyList())
 
     // --- FUNGSI AMBIL RIWAYAT EVENT ---
-    fun getUserEventBookings() {
-        viewModelScope.launch {
-            try {
-                isLoading = true
-                val userId = SupabaseClient.client.auth.currentUserOrNull()?.id ?: return@launch
-
-                // Ambil data dari tabel 'event_bookings'
-                val result = SupabaseClient.client.from("event_bookings")
-                    .select {
-                        filter { eq("user_id", userId) }
-                        order("id", Order.DESCENDING) // Urutkan dari yang terbaru
-                    }.decodeList<EventBooking>()
-
-                eventBookings = result
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                isLoading = false
-            }
-        }
-    }
+//    fun getUserEventBookings() {
+//        viewModelScope.launch {
+//            try {
+//                isLoading = true
+//                val userId = SupabaseClient.client.auth.currentUserOrNull()?.id ?: return@launch
+//
+//                // Ambil data dari tabel 'event_bookings'
+//                val result = SupabaseClient.client.from("event_bookings")
+//                    .select {
+//                        filter { eq("user_id", userId) }
+//                        order("id", Order.DESCENDING) // Urutkan dari yang terbaru
+//                    }.decodeList<EventBooking>()
+//
+//                eventBookings = result
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            } finally {
+//                isLoading = false
+//            }
+//        }
+//    }
 }

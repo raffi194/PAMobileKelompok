@@ -40,7 +40,7 @@ fun EventDetailScreen(
             )
         },
         bottomBar = {
-            // Tombol Beli Tiket (Hanya untuk User Biasa)
+            // tombol buat beli tiket cuman buat user
             if (!isAdmin) {
                 BottomAppBar(
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -68,7 +68,7 @@ fun EventDetailScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // 1. Header Gambar
+            // header gambar poster
             AsyncImage(
                 model = event.posterUrl,
                 contentDescription = event.title,
@@ -78,10 +78,10 @@ fun EventDetailScreen(
                 contentScale = ContentScale.Crop
             )
 
-            // 2. Konten Informasi (Tanpa Tab)
+            // konten informasi
             Column(modifier = Modifier.padding(16.dp)) {
 
-                // Judul Event
+                // title
                 Text(
                     text = event.title,
                     style = MaterialTheme.typography.headlineMedium,
@@ -90,7 +90,7 @@ fun EventDetailScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Info Tanggal
+                // date
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.CalendarToday,
@@ -110,7 +110,7 @@ fun EventDetailScreen(
                 Divider()
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Deskripsi
+                // description
                 Text(
                     text = "Deskripsi Acara",
                     style = MaterialTheme.typography.titleLarge,
@@ -127,7 +127,7 @@ fun EventDetailScreen(
                 Divider()
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Menampilkan Harga
+                // price
                 Text(
                     text = "Harga Tiket Masuk",
                     style = MaterialTheme.typography.titleMedium,
@@ -140,14 +140,13 @@ fun EventDetailScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                // Tambahan ruang di bawah agar tidak tertutup tombol
                 Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }
 }
 
-// Helper Format Rupiah
+// untuk format rupiah
 fun formatRupiahDetail(number: Long): String {
     val format = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
     return format.format(number).replace("Rp", "Rp ")

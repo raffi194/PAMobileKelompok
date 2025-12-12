@@ -25,15 +25,15 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingEventScreen(
-    event: Event, // Data event dikirim dari layar sebelumnya
+    event: Event,
     viewModel: EventViewModel = viewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToPayment: (Long, Long) -> Unit
 ) {
-    // 1. STATE JUMLAH TIKET
+    // state awal jumlah tiket
     var ticketCount by remember { mutableIntStateOf(1) }
 
-    // 2. HITUNG TOTAL HARGA OTOMATIS
+    // logika hitung harga total otomatis
     val totalPrice = event.price * ticketCount
 
     val context = LocalContext.current
@@ -50,17 +50,17 @@ fun BookingEventScreen(
             )
         },
         bottomBar = {
-            // 3. TOMBOL BAYAR / KONFIRMASI
+            // konfirmasi pemesanan
             Button(
                 onClick = {
-                    // Panggil fungsi booking di ViewModel
+                    // panggil fungsi booking di ViewModel
                     viewModel.bookEvent(
                         event = event,
-                        bookingDate = event.eventDate, // Otomatis pakai tanggal event
+                        bookingDate = event.eventDate, // otomatis pakai tanggal event yg terikat dengan eventnya
                         ticketCount = ticketCount,
                         context = context,
                         onSuccess = { bookingId ->
-                            // Pindah ke Payment dengan membawa ID dan Total Harga
+                            // navigasi ke payment dengan membawa data bookingId dan total harga
                             onNavigateToPayment(bookingId, totalPrice)
                         }
                     )
@@ -69,7 +69,7 @@ fun BookingEventScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
                     .height(50.dp),
-                enabled = !viewModel.isLoading // Matikan tombol saat loading
+                enabled = !viewModel.isLoading // loading akan otomatis membuat tombol nonaktif
             ) {
                 if (viewModel.isLoading) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
@@ -89,7 +89,7 @@ fun BookingEventScreen(
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
-            // --- INFO EVENT ---
+            // deskripsi event
             Text(
                 text = "Event yang dipilih:",
                 style = MaterialTheme.typography.labelLarge,
@@ -103,12 +103,12 @@ fun BookingEventScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- INFO TANGGAL (READ ONLY) ---
+            // deskripsi tanggal event
             Text(text = "Tanggal Kunjungan", fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
-                value = event.eventDate, // Langsung tampilkan tanggal event
-                onValueChange = {}, // Tidak bisa diedit
+                value = event.eventDate, // langsung ambil dari database
+                onValueChange = {}, // tidak ada perubahan
                 readOnly = true,
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.CalendarToday, null) },
@@ -116,12 +116,12 @@ fun BookingEventScreen(
                     disabledTextColor = MaterialTheme.colorScheme.onSurface,
                     disabledBorderColor = MaterialTheme.colorScheme.outline
                 ),
-                enabled = false // Tampil seperti disabled agar user tahu ini fix
+                enabled = false // membuat bagian ini seperti disabled agar user tahu ini fix
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- COUNTER TIKET ---
+            // penghitung tiket
             Text(text = "Jumlah Tiket", fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -132,20 +132,20 @@ fun BookingEventScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp)
             ) {
-                // Tombol Kurang
+                // kurang
                 FilledIconButton(
                     onClick = { if (ticketCount > 1) ticketCount-- },
                     modifier = Modifier.size(40.dp)
                 ) { Icon(Icons.Default.Remove, "Kurang") }
 
-                // Angka Jumlah
+                // angka jumlah
                 Text(
                     text = "$ticketCount",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
 
-                // Tombol Tambah
+                // tambah
                 FilledIconButton(
                     onClick = { ticketCount++ },
                     modifier = Modifier.size(40.dp)
@@ -154,7 +154,7 @@ fun BookingEventScreen(
 
             Divider(modifier = Modifier.padding(vertical = 24.dp))
 
-            // --- RINCIAN HARGA ---
+            // penjelasan harga
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -181,16 +181,16 @@ fun BookingEventScreen(
     }
 }
 
-private fun EventViewModel.bookEvent(
-    event: Event,
-    bookingDate: String,
-    ticketCount: Int,
-    context: Context,
-    onSuccess: () -> Unit
-) {
-}
+//private fun EventViewModel.bookEvent(
+//    event: Event,
+//    bookingDate: String,
+//    ticketCount: Int,
+//    context: Context,
+//    onSuccess: () -> Unit
+//) {
+//}
 
-// Helper Format Rupiah (Bisa ditaruh di file utils terpisah jika mau)
+// buat format ulang Rupiah
 fun formatRupiahBooking(number: Long): String {
     val format = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
     return format.format(number).replace("Rp", "Rp ")

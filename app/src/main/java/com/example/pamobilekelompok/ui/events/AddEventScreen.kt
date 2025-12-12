@@ -36,12 +36,11 @@ import java.util.Locale
 fun AddEventScreen(
     viewModel: EventViewModel = viewModel(),
     onNavigateBack: () -> Unit,
-    // Parameter Opsional untuk Edit Mode
     eventId: Long? = null,
     initialTitle: String = "",
     initialDesc: String = "",
     initialDate: String = "",
-    initialPrice: String = "", // <--- Parameter Awal Harga (String agar mudah di input)
+    initialPrice: String = "",
     initialImageUrl: String? = null
 ) {
     val isEditMode = eventId != null && eventId > 0
@@ -96,7 +95,7 @@ fun AddEventScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // --- AREA GAMBAR ---
+            // tempat gambar
             Box(
                 modifier = Modifier.fillMaxWidth().height(200.dp),
                 contentAlignment = Alignment.Center
@@ -119,18 +118,16 @@ fun AddEventScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- FORM INPUT ---
+            // form
             OutlinedTextField(
                 value = title, onValueChange = { title = it },
                 label = { Text("Judul Event") }, modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // --- INPUT HARGA (BARU) ---
             OutlinedTextField(
                 value = price,
                 onValueChange = {
-                    // Hanya izinkan angka
                     if (it.all { char -> char.isDigit() }) {
                         price = it
                     }
@@ -164,16 +161,14 @@ fun AddEventScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- TOMBOL AKSI ---
             Button(
                 onClick = {
-                    // Validasi input
                     if (title.isNotBlank() && description.isNotBlank() && eventDateDb.isNotBlank() && price.isNotBlank()) {
 
                         val priceLong = price.toLongOrNull() ?: 0L
 
                         if (isEditMode) {
-                            // UPDATE
+                            // update
                             viewModel.updateEvent(
                                 id = eventId!!,
                                 title = title,
@@ -186,7 +181,7 @@ fun AddEventScreen(
                                 onSuccess = onNavigateBack
                             )
                         } else {
-                            // INSERT BARU
+                            //  insert
                             if (imageUri == null) {
                                 Toast.makeText(context, "Pilih gambar dulu!", Toast.LENGTH_SHORT).show()
                             } else {

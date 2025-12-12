@@ -1,7 +1,7 @@
 package com.example.pamobilekelompok.ui.events
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable // PENTING: Import ini
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,10 +34,8 @@ fun EventScreen(
     onNavigateToAdd: () -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (Event) -> Unit,
-    // 1. TAMBAHKAN PARAMETER INI DI SINI
     onNavigateToDetail: (Event) -> Unit
 ) {
-    // ... (LaunchedEffect dan Scaffold tetap sama) ...
     LaunchedEffect(Unit) { viewModel.getEvents() }
 
     Scaffold(
@@ -83,7 +81,6 @@ fun EventItem(
     isAdmin: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    // 3. TAMBAHKAN PARAMETER ONCLICK DI SINI
     onClick: () -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -103,7 +100,6 @@ fun EventItem(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
-            // 4. PASANG CLICK LISTENER DI KARTU
             .clickable { onClick() }
     ) {
         Box {
