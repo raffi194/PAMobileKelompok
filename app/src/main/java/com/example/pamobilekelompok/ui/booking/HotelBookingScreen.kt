@@ -41,7 +41,7 @@ fun HotelBookingScreen(
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
-    // Ekstrak harga per malam (hilangkan "Rp" dan "/malam", convert ke Long)
+    // Ekstrak harga per malam
     val pricePerNightLong = remember(pricePerNight) {
         pricePerNight?.replace(Regex("[^0-9]"), "")?.toLongOrNull() ?: 0L
     }

@@ -41,16 +41,13 @@ class HotelViewModel : ViewModel() {
         getHotels() // Auto load saat ViewModel dibuat
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // 📖 READ - Ambil semua data hotel (dengan Realtime Update)
-    // ═══════════════════════════════════════════════════════════
+    // READ - Ambil semua data hotel (dengan Realtime Update)
     fun getHotels() {
         viewModelScope.launch {
             try {
                 isLoading = true
                 errorMessage = null
 
-                // Query dengan sorting terbaru
                 val result = SupabaseClient.client.from("hotels")
                     .select {
                         order("id", Order.DESCENDING)
@@ -68,9 +65,7 @@ class HotelViewModel : ViewModel() {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // ➕ CREATE - Upload hotel baru dengan gambar
-    // ═══════════════════════════════════════════════════════════
+    // CREATE - Upload hotel baru dengan gambar
     fun uploadHotel(
         name: String,
         address: String,
@@ -85,10 +80,10 @@ class HotelViewModel : ViewModel() {
             try {
                 isLoading = true
 
-                // ✅ TAMBAHKAN CEK SESSION
+                // TAMBAHKAN CEK SESSION
                 val session = SupabaseClient.client.auth.currentSessionOrNull()
                 if (session == null) {
-                    throw Exception("❌ User belum login! Session tidak ditemukan.")
+                    throw Exception("User belum login! Session tidak ditemukan.")
                 }
 
                 Log.d("HotelVM", "User ID: ${session.user?.id}")
@@ -124,12 +119,12 @@ class HotelViewModel : ViewModel() {
                     imageUrl = publicUrl
                 )
 
-                // ✅ TAMBAHKAN TRY-CATCH KHUSUS UNTUK INSERT
+                // TAMBAHKAN TRY-CATCH KHUSUS UNTUK INSERT
                 try {
                     SupabaseClient.client.from("hotels").insert(newHotel)
-                    Log.d("HotelVM", "✅ Hotel inserted to database")
+                    Log.d("HotelVM", "Hotel inserted to database")
                 } catch (insertError: Exception) {
-                    Log.e("HotelVM", "❌ INSERT ERROR: ${insertError.message}")
+                    Log.e("HotelVM", "INSERT ERROR: ${insertError.message}")
                     Log.e("HotelVM", "Stack trace: ", insertError)
                     throw Exception("Gagal simpan ke database: ${insertError.message}\n\nKemungkinan: RLS Policy belum diatur dengan benar. Cek Supabase Dashboard!")
                 }
@@ -138,7 +133,7 @@ class HotelViewModel : ViewModel() {
                 getHotels()
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "✅ Hotel berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Hotel berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
                 }
 
                 onSuccess()
@@ -148,7 +143,7 @@ class HotelViewModel : ViewModel() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,
-                        "❌ Gagal upload: ${e.message}",
+                        "Gagal upload: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -157,10 +152,7 @@ class HotelViewModel : ViewModel() {
             }
         }
     }
-
-    // ═══════════════════════════════════════════════════════════
-    // ✏️ UPDATE - Edit hotel dengan opsi ganti gambar
-    // ═══════════════════════════════════════════════════════════
+    // UPDATE - Edit hotel dengan opsi ganti gambar
     fun updateHotel(
         id: Long,
         name: String,
@@ -218,7 +210,7 @@ class HotelViewModel : ViewModel() {
                 getHotels()
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "✅ Data berhasil diupdate!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Data berhasil diupdate!", Toast.LENGTH_SHORT).show()
                 }
 
                 onSuccess()
@@ -228,7 +220,7 @@ class HotelViewModel : ViewModel() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,
-                        "❌ Gagal update: ${e.message}",
+                        "Gagal update: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -237,10 +229,7 @@ class HotelViewModel : ViewModel() {
             }
         }
     }
-
-    // ═══════════════════════════════════════════════════════════
-    // 🗑️ DELETE - Hapus hotel dan gambarnya
-    // ═══════════════════════════════════════════════════════════
+    // DELETE - Hapus hotel dan gambarnya
     fun deleteHotel(hotel: Hotel, context: Context) {
         viewModelScope.launch {
             try {
@@ -277,7 +266,7 @@ class HotelViewModel : ViewModel() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,
-                        "❌ Gagal hapus: ${e.message}",
+                        "Gagal hapus: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -286,10 +275,7 @@ class HotelViewModel : ViewModel() {
             }
         }
     }
-
-    // ═══════════════════════════════════════════════════════════
-    // 📥 DOWNLOAD - Download gambar hotel ke storage lokal
-    // ═══════════════════════════════════════════════════════════
+    // DOWNLOAD - Download gambar hotel ke storage lokal
     fun downloadHotelImage(
         imageUrl: String,
         hotelName: String,
@@ -327,7 +313,7 @@ class HotelViewModel : ViewModel() {
                     downloadProgress = null
                     Toast.makeText(
                         context,
-                        "✅ Download berhasil!\nLokasi: ${localFile.absolutePath}",
+                        "Download berhasil!\nLokasi: ${localFile.absolutePath}",
                         Toast.LENGTH_LONG
                     ).show()
                     onSuccess(localFile)
@@ -339,7 +325,7 @@ class HotelViewModel : ViewModel() {
                     downloadProgress = null
                     Toast.makeText(
                         context,
-                        "❌ Download gagal: ${e.message}",
+                        "Download gagal: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }

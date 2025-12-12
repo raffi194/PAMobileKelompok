@@ -48,7 +48,7 @@ fun HotelBookingSuccessScreen(
             onClick = onNavigateHome,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Kembali ke Beranda") // ✅ TANPA ICON
+            Text("Kembali ke Beranda")
         }
     }
 }

@@ -41,7 +41,7 @@ fun HotelScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDetail: (Hotel) -> Unit
 ) {
-    // ═══════ STATE MANAGEMENT ═══════
+    // STATE MANAGEMENT
     // Form States
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
@@ -67,7 +67,7 @@ fun HotelScreen(
     // Collect StateFlow dengan collectAsState
     val hotels by viewModel.hotels.collectAsState()
 
-    // ═══════ UI LAYOUT ═══════
+    //UI LAYOUT
     Scaffold(
         topBar = {
             TopAppBar(
@@ -104,11 +104,11 @@ fun HotelScreen(
 
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
 
-            // ═══════ LOADING STATE ═══════
+            //LOADING STATE
             if (viewModel.isLoading && !showDialog && hotelToDelete == null) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
-            // ═══════ EMPTY STATE ═══════
+            //EMPTY STATE
             else if (hotels.isEmpty() && !viewModel.isLoading) {
                 Column(
                     modifier = Modifier.align(Alignment.Center),
@@ -119,7 +119,7 @@ fun HotelScreen(
                     Text("Belum ada data hotel", style = MaterialTheme.typography.bodyLarge)
                 }
             }
-            // ═══════ GRID HOTEL LIST ═══════
+            //GRID HOTEL LIST
             else {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
@@ -151,15 +151,12 @@ fun HotelScreen(
                 }
             }
         }
-
-        // ═══════════════════════════════════════════════════════════
-        // 📝 DIALOG FORM (CREATE / UPDATE)
-        // ═══════════════════════════════════════════════════════════
+        //DIALOG FORM (CREATE / UPDATE)
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
                 title = {
-                    Text(if (isEditMode) "✏️ Edit Hotel" else "➕ Tambah Hotel")
+                    Text(if (isEditMode) "Edit Hotel" else "Tambah Hotel")
                 },
                 text = {
                     Column(
@@ -235,7 +232,7 @@ fun HotelScreen(
                         onClick = {
                             if (name.isNotEmpty()) {
                                 if (isEditMode) {
-                                    // ✏️ MODE UPDATE
+                                    // MODE UPDATE
                                     if (currentEditingId != null) {
                                         viewModel.updateHotel(
                                             id = currentEditingId!!,
@@ -252,7 +249,7 @@ fun HotelScreen(
                                         }
                                     }
                                 } else {
-                                    // ➕ MODE CREATE
+                                    //MODE CREATE
                                     if (selectedImageUri != null) {
                                         viewModel.uploadHotel(
                                             name = name,
@@ -292,7 +289,7 @@ fun HotelScreen(
                 }
             )
         }
-        // 🗑️ DIALOG KONFIRMASI HAPUS
+        //DIALOG KONFIRMASI HAPUS
         if (hotelToDelete != null) {
             AlertDialog(
                 onDismissRequest = { hotelToDelete = null },
@@ -322,7 +319,7 @@ fun HotelScreen(
         }
     }
 }
-// 🏨 HOTEL ITEM COMPONENT
+//HOTEL ITEM COMPONENT
 @Composable
 fun HotelItem(hotel: Hotel, isAdmin: Boolean, onClick: () -> Unit, onDeleteClick: () -> Unit, onEditClick: () -> Unit) {
     Card(elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.clickable { onClick() }) {

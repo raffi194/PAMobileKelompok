@@ -36,7 +36,7 @@ fun OrderHistoryScreen(
     onNavigateToDetail: (Booking) -> Unit,
     onNavigateToHotelDetail: (HotelBooking) -> Unit = {}
 ) {
-    // State untuk Tab yang dipilih (0 = Wisata, 1 = Hotel, 2 = Event)
+    // State untuk Tab yang dipilih
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Wisata", "Hotel", "Event")
 
@@ -61,7 +61,7 @@ fun OrderHistoryScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            // --- TAB ROW (MENU ATAS) ---
+            //TAB ROW (MENU ATAS)
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -83,7 +83,7 @@ fun OrderHistoryScreen(
                 }
             }
 
-            // --- KONTEN LIST ---
+            //KONTEN LIST
             Box(modifier = Modifier.fillMaxSize()) {
                 if (viewModel.isLoading) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -141,11 +141,7 @@ fun OrderHistoryScreen(
         }
     }
 }
-
-// ═══════════════════════════════════════════════════════════
-// 🎫 KOMPONEN KARTU PESANAN
-// ═══════════════════════════════════════════════════════════
-
+//KOMPONEN KARTU PESANAN
 @Composable
 fun DestinationBookingCard(booking: Booking, onClick: () -> Unit) {
     Card(

@@ -35,7 +35,7 @@ data class Booking(
 sealed class BookingItem {
     data class DestinationBookingItem(val booking: Booking) : BookingItem()
     data class HotelBookingItem(val booking: HotelBooking) : BookingItem()
-    data class EventBookingItem(val booking: EventBooking) : BookingItem() // ✅ TAMBAHAN BARU
+    data class EventBookingItem(val booking: EventBooking) : BookingItem() // TAMBAHAN BARU
 }
 
 class BookingViewModel : ViewModel() {
@@ -50,9 +50,7 @@ class BookingViewModel : ViewModel() {
     // List Gabungan untuk UI (Akan berisi Destinasi, Hotel, dan Event)
     var allBookings by mutableStateOf<List<BookingItem>>(emptyList())
 
-    // ═══════════════════════════════════════════════════════════
-    // 📍 DESTINASI BOOKING FUNCTIONS
-    // ═══════════════════════════════════════════════════════════
+    // DESTINASI BOOKING FUNCTIONS
 
     fun createBooking(
         destinationName: String,
@@ -128,11 +126,7 @@ class BookingViewModel : ViewModel() {
             }
         }
     }
-
-    // ═══════════════════════════════════════════════════════════
-    // 🏨 HOTEL BOOKING FUNCTIONS
-    // ═══════════════════════════════════════════════════════════
-
+    // HOTEL BOOKING FUNCTIONS
     fun createHotelBooking(
         hotelName: String,
         guestName: String,
@@ -177,13 +171,13 @@ class BookingViewModel : ViewModel() {
                     .decodeSingle<HotelBooking>()
 
                 if (result.id != null) {
-                    Log.d("BookingVM", "✅ Hotel booking created with ID: ${result.id}")
+                    Log.d("BookingVM", "Hotel booking created with ID: ${result.id}")
                     onSuccess(result.id)
                 } else {
                     throw Exception("Gagal mendapatkan ID Booking Hotel")
                 }
             } catch (e: Exception) {
-                Log.e("BookingVM", "❌ Error create hotel booking: ${e.message}")
+                Log.e("BookingVM", "Error create hotel booking: ${e.message}")
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Gagal: ${e.message}", Toast.LENGTH_LONG).show()
                 }
@@ -219,11 +213,7 @@ class BookingViewModel : ViewModel() {
             }
         }
     }
-
-    // ═══════════════════════════════════════════════════════════
-    // 📜 GET ALL BOOKINGS (DESTINASI + HOTEL + EVENT)
-    // ═══════════════════════════════════════════════════════════
-
+    // GET ALL BOOKINGS (DESTINASI + HOTEL + EVENT)
     fun getUserBookings() {
         viewModelScope.launch {
             try {
@@ -244,7 +234,7 @@ class BookingViewModel : ViewModel() {
                         order("created_at", Order.DESCENDING)
                     }.decodeList<HotelBooking>()
 
-                // 3. Get Event Bookings (✅ KODE BARU)
+                // 3. Get Event Bookings
                 val events = SupabaseClient.client.from("event_bookings")
                     .select {
                         filter { eq("user_id", userId) }
