@@ -23,6 +23,7 @@ class TripViewModel : ViewModel() {
     var tripDocs by mutableStateOf<List<TripDoc>>(emptyList())
     var isLoading by mutableStateOf(false)
 
+    // get trip (baca db)
     fun getTrips() {
         viewModelScope.launch {
             try {
@@ -33,13 +34,13 @@ class TripViewModel : ViewModel() {
                     }.decodeList<TripDoc>()
                 tripDocs = result
             } catch (e: Exception) {
-                // Handle error
             } finally {
                 isLoading = false
             }
         }
     }
 
+    // upload trip
     fun uploadTrip(
         caption: String,
         imageUri: Uri,
@@ -52,7 +53,7 @@ class TripViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                // 1. Upload Gambar
+                // upload gambar
                 val inputStream = context.contentResolver.openInputStream(imageUri)
                 val bytes = inputStream?.readBytes()
                 inputStream?.close() ?: throw Exception("Gagal baca file")
@@ -62,7 +63,7 @@ class TripViewModel : ViewModel() {
                 bucket.upload(fileName, bytes!!)
                 val publicUrl = bucket.publicUrl(fileName)
 
-                // 2. Insert ke DB
+                // insert db
                 val newTrip = TripDoc(userId = userId, caption = caption, mediaUrl = publicUrl)
                 SupabaseClient.client.from("trip_docs").insert(newTrip)
 
@@ -81,7 +82,7 @@ class TripViewModel : ViewModel() {
         }
     }
 
-    // --- FUNGSI BARU UNTUK UPDATE ---
+    // update trip
     fun updateTrip(
         trip: TripDoc,
         newCaption: String,
@@ -96,7 +97,7 @@ class TripViewModel : ViewModel() {
             try {
                 var finalImageUrl = trip.mediaUrl
 
-                // 1. Jika User Memilih Foto Baru -> Upload Foto Baru & Hapus Lama
+                // pili foto baru = upload yang baru hapus lama
                 if (newImageUri != null) {
                     val inputStream = context.contentResolver.openInputStream(newImageUri)
                     val bytes = inputStream?.readBytes()
@@ -108,7 +109,7 @@ class TripViewModel : ViewModel() {
                         bucket.upload(fileName, bytes)
                         finalImageUrl = bucket.publicUrl(fileName)
 
-                        // Hapus foto lama (Opsional, agar hemat storage)
+                        // hapus foto lama
                         try {
                             val oldFileName = trip.mediaUrl.substringAfterLast("/")
                             bucket.delete(oldFileName)
@@ -116,15 +117,13 @@ class TripViewModel : ViewModel() {
                     }
                 }
 
-                // 2. Update Database
-                // Kita buat objek baru dengan data yang diubah
+                // update database
                 val updatedTrip = trip.copy(
                     caption = newCaption,
                     mediaUrl = finalImageUrl
                 )
 
-                // Kirim update ke Supabase (Hanya kolom caption dan media_url yang perlu diupdate sebenernya)
-                // Tapi cara termudah pakai object replace dengan filter ID
+                // kirim update ke Supabase
                 SupabaseClient.client.from("trip_docs").update(
                     {
                         set("caption", newCaption)
@@ -149,6 +148,7 @@ class TripViewModel : ViewModel() {
         }
     }
 
+    // delete trip
     fun deleteTrip(trip: TripDoc, context: Context) {
         viewModelScope.launch {
             try {
@@ -156,7 +156,7 @@ class TripViewModel : ViewModel() {
                 val id = trip.id ?: return@launch
                 SupabaseClient.client.from("trip_docs").delete { filter { eq("id", id) } }
 
-                // Hapus gambar
+                // hapus gambar
                 try {
                     val fileName = trip.mediaUrl.substringAfterLast("/")
                     SupabaseClient.client.storage.from("trips").delete(fileName)

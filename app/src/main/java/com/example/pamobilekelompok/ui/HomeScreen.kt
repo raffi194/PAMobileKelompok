@@ -42,7 +42,7 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToEventDetail: (Event) -> Unit
 ) {
-    // Ambil data user agar nama tampil
+    // ambil data user agar nama tampil
     LaunchedEffect(Unit) {
         authViewModel.getCurrentUser()
         eventViewModel.getEvents()
@@ -93,7 +93,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- 2. FITUR UTAMA (4 KOLOM - Menggunakan Layout Teman agar ada Komunitas) ---
+        // 4 fitur utama (4 kolom)
         Text("Jelajahi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -107,28 +107,28 @@ fun HomeScreen(
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween // Mengatur jarak agar 4 item muat rapi
             ) {
-                // Feature 1: Destinasi
+                // feature 1: destinasi
                 FeatureItem(
                     icon = Icons.Default.Place,
                     label = "Destinasi",
                     onClick = { onNavigateToFeature("destinations") }
                 )
 
-                // Feature 2: Kuliner
+                // feature 2: kuliner
                 FeatureItem(
                     icon = Icons.Default.Star,
                     label = "Kuliner",
                     onClick = { onNavigateToFeature("foods") }
                 )
 
-                // Feature 3: Hotel
+                // feature 3: hotel
                 FeatureItem(
                     icon = Icons.Default.Home,
                     label = "Hotel",
                     onClick = { onNavigateToFeature("hotels") }
                 )
 
-                // Feature 4: Komunitas (Trip)
+                // feature 4: komunitas (trip)
                 FeatureItem(
                     icon = Icons.Default.Person,
                     label = "Komunitas",
@@ -139,7 +139,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- 3. EVENT SERU ---
+        // event seru
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -153,21 +153,20 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // --- LOGIKA TAMPILAN (Loading vs Kosong vs Ada Data) ---
+        // logika tampilan (loading vs kosong vs ada data)
         if (eventViewModel.isLoading) {
-            // KONDISI 1: SEDANG LOADING
+            // kondisi sedang loading
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp), // Tinggi disesuaikan dengan kartu
+                    .height(180.dp),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
 
         } else if (eventViewModel.events.isEmpty()) {
-            // KONDISI 2: DATA KOSONG (PERMINTAAN ANDA)
-            // Kita buat kotak abu-abu tipis dengan ikon agar tidak terlihat "bug"
+            // kondisi sedang kosong
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -193,7 +192,7 @@ fun HomeScreen(
             }
 
         } else {
-            // KONDISI 3: ADA DATA (Tampilkan List)
+            // kondisi ada data
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(horizontal = 4.dp)
@@ -209,7 +208,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- 4. PESANAN SAYA (Menggunakan Desain Anda yang Lebih Detail) ---
+        // status pesanan saya
         Text("Pesanan Saya", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -245,7 +244,7 @@ fun HomeScreen(
     }
 }
 
-// Komponen Kecil untuk Menu Utama (Ukuran 56dp agar muat 4 kolom)
+// komponen kecil
 @Composable
 fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { onClick() }) {
@@ -267,11 +266,11 @@ fun FeatureItem(icon: ImageVector, label: String, onClick: () -> Unit) {
     }
 }
 
-// Komponen Dummy Event Card
+// komponen dummy event card
 @Composable
 fun EventCard(
     event: Event,
-    onClick: () -> Unit // Tambahkan parameter onClick
+    onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier

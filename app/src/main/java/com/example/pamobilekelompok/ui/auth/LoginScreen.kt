@@ -43,7 +43,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Input Email
+        // input email
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -54,7 +54,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Input Password dengan Toggle Mata
+        // input password
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -72,13 +72,13 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Error Message
+        // error message
         authViewModel.errorMessage?.let {
             Text(text = it, color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Tombol Login
+        // tombol login
         if (authViewModel.isLoading) {
             CircularProgressIndicator()
         } else {

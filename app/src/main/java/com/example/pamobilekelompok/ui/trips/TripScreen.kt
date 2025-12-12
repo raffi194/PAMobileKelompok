@@ -46,24 +46,24 @@ fun TripScreen(
     authViewModel: AuthViewModel = viewModel(),
     onNavigateBack: () -> Unit
 ) {
-    // State Navigasi Lokal
+    // state navigasi lokal
     var selectedTrip by remember { mutableStateOf<TripDoc?>(null) }
 
-    // Handle tombol Back Hardware
+    // tombol backhandler
     BackHandler(enabled = selectedTrip != null) {
         selectedTrip = null
     }
 
-    // State Dialog
+    // state dialog
     var showDialog by remember { mutableStateOf(false) }
     var caption by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // State Edit Mode
+    // state edit
     var isEditMode by remember { mutableStateOf(false) }
     var editingTrip by remember { mutableStateOf<TripDoc?>(null) }
 
-    // State User
+    // state user
     var currentUserId by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
@@ -120,17 +120,17 @@ fun TripScreen(
                 )
             } else {
 
-                // --- ANIMASI ZOOM IN / OUT ---
+                // animasi zoom in + out
                 AnimatedContent(
                     targetState = selectedTrip,
                     transitionSpec = {
                         if (targetState != null) {
-                            // SAAT MASUK DETAIL: Zoom In (Membesar) + Fade In
+                            // masuk detail trip : zoom in + fade in
                             (fadeIn(animationSpec = tween(300)) +
                                     scaleIn(initialScale = 0.85f, animationSpec = tween(300)))
                                 .togetherWith(fadeOut(animationSpec = tween(300)))
                         } else {
-                            // SAAT KEMBALI KE GRID: Zoom Out (Detail Mengecil) + Fade Out
+                            // kembali ke grid : zoom out + fade out
                             fadeIn(animationSpec = tween(300))
                                 .togetherWith(fadeOut(animationSpec = tween(300)) +
                                         scaleOut(targetScale = 0.85f, animationSpec = tween(300)))
@@ -139,7 +139,7 @@ fun TripScreen(
                     label = "ZoomTransition"
                 ) { trip ->
                     if (trip == null) {
-                        // TAMPILAN GRID
+                        // tampilan grid
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(3),
                             contentPadding = PaddingValues(2.dp),
@@ -154,7 +154,8 @@ fun TripScreen(
                             }
                         }
                     } else {
-                        // TAMPILAN DETAIL
+
+                        // tampilan detail
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -181,7 +182,7 @@ fun TripScreen(
             }
         }
 
-        // --- DIALOG ---
+        // dialog
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { if (!tripViewModel.isLoading) showDialog = false },
@@ -239,7 +240,7 @@ fun TripScreen(
     }
 }
 
-// --- KOMPONEN THUMBNAIL ---
+// thumbnail
 @Composable
 fun TripThumbnail(trip: TripDoc, onClick: () -> Unit) {
     Box(
@@ -256,7 +257,7 @@ fun TripThumbnail(trip: TripDoc, onClick: () -> Unit) {
     }
 }
 
-// --- KOMPONEN DETAIL CARD ---
+// detail card
 @Composable
 fun TripCard(
     trip: TripDoc,
@@ -298,9 +299,9 @@ fun TripCard(
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(3f / 4f) // 1. Paksa rasio menjadi 4:3 (Landscape)
-                    .clip(RoundedCornerShape(8.dp)), // 2. (Opsional) Beri sedikit lengkungan sudut agar manis
-                contentScale = ContentScale.Crop // 3. Potong (Crop) bagian atas/bawah agar gambar mengisi kotak 4:3 penuh
+                    .aspectRatio(3f / 4f) // rasio menjadi 4:3 (Landscape)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop // crop atas/bawah agar gambar mengisi kotak 4:3 penuh
             )
 
             Column(modifier = Modifier.padding(12.dp)) {

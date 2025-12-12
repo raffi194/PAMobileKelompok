@@ -21,6 +21,7 @@ fun RegisterScreen(
     authViewModel: AuthViewModel = viewModel(),
     onNavigateToLogin: () -> Unit
 ) {
+
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -43,7 +44,7 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Input Username
+        // input username
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
@@ -54,7 +55,7 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Input Email
+        // input email
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -65,7 +66,7 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Input Password dengan Toggle Mata
+        // input password
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -83,13 +84,13 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Error Message
+        // error message
         authViewModel.errorMessage?.let {
             Text(text = it, color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Tombol Register
+        // tombol register
         if (authViewModel.isLoading) {
             CircularProgressIndicator()
         } else {
@@ -99,8 +100,6 @@ fun RegisterScreen(
                         authViewModel.register(email, password, username, context) {
                             onNavigateToLogin() // Pindah ke Login jika sukses
                         }
-                    } else {
-                        // Toast handling (optional)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

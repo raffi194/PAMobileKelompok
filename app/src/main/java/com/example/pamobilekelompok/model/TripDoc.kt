@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class TripDoc(
     val id: Long? = null,
 
-    // Foreign Key ke tabel users
+    // foreign key ke tabel users
     @SerialName("user_id")
     val userId: String,
 
@@ -19,12 +19,11 @@ data class TripDoc(
     @SerialName("created_at")
     val createdAt: String? = null,
 
-    // Relasi: Mengambil data dari tabel 'users'
-    // Nama variabel 'users' harus sama dengan nama tabel referensi di Supabase
+    // ngambil data dari tabel users
     val users: UserProfile? = null
 )
 
-// Class helper untuk menangkap data hasil Join
+// class helper untuk menangkap data hasil join
 @Serializable
 data class UserProfile(
     @SerialName("display_name")

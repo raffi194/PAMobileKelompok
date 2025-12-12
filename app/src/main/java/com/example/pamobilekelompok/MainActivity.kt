@@ -23,7 +23,7 @@ import androidx.navigation.navArgument
 import com.example.pamobilekelompok.data.SupabaseClient
 import com.example.pamobilekelompok.model.Event
 
-// Import UI Screens
+// import ui
 import com.example.pamobilekelompok.ui.HomeScreen
 import com.example.pamobilekelompok.ui.ProfileScreen
 import com.example.pamobilekelompok.ui.auth.LoginScreen
@@ -47,9 +47,9 @@ import com.example.pamobilekelompok.ui.reviews.ReviewScreen
 import com.example.pamobilekelompok.ui.trips.TripScreen
 import com.example.pamobilekelompok.ui.theme.PAMobileKelompokTheme
 import com.example.pamobilekelompok.ui.booking.PaymentHotelScreen
-import com.example.pamobilekelompok.ui.hotels.HotelDetailScreen // ✅ JANGAN LUPA IMPORT INI
+import com.example.pamobilekelompok.ui.hotels.HotelDetailScreen
 
-// Import ViewModels
+// import viewmodels
 import com.example.pamobilekelompok.viewmodel.AuthViewModel
 import com.example.pamobilekelompok.viewmodel.Booking
 import com.example.pamobilekelompok.viewmodel.BookingViewModel
@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
                             startDestination = startDestination!!,
                             modifier = Modifier.padding(innerPadding)
                         ) {
-                            // --- AUTH ---
+                            // auth
                             composable("login") {
                                 LoginScreen(
                                     authViewModel = authViewModel,
@@ -108,7 +108,7 @@ class MainActivity : ComponentActivity() {
                                 RegisterScreen(onNavigateToLogin = { navController.popBackStack() })
                             }
 
-                            // --- HOME ---
+                            // home
                             composable("home") {
                                 HomeScreen(
                                     authViewModel = authViewModel,
@@ -122,6 +122,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+                            // profile
                             composable("profile") {
                                 ProfileScreen(
                                     authViewModel = authViewModel,
@@ -132,7 +133,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- DESTINASI ---
+                            // destinasi
                             composable("destinations") {
                                 DestinationScreen(
                                     viewModel = destinationViewModel,
@@ -146,6 +147,8 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+
+                            // detail destinasi
                             composable(
                                 "destination_detail/{id}/{name}/{desc}/{url}/{price}",
                                 arguments = listOf(
@@ -176,7 +179,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- BOOKING DESTINASI ---
+                            // booking destinasi
                             composable(
                                 "booking_destination/{name}/{price}",
                                 arguments = listOf(
@@ -201,7 +204,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- PAYMENT DESTINASI ---
+                            // payment destinasi
                             composable(
                                 "payment/{bookingId}/{total}",
                                 arguments = listOf(
@@ -226,13 +229,14 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            // success booking destinasi
                             composable("booking_destination_success") {
                                 BookingDestinationSuccessScreen(onNavigateHome = {
                                     navController.navigate("home") { popUpTo("home") { inclusive = true } }
                                 })
                             }
 
-                            // --- HOTELS ---
+                            // hotels
                             composable("hotels") {
                                 HotelScreen(
                                     isAdmin = authViewModel.isAdmin,
@@ -243,13 +247,13 @@ class MainActivity : ComponentActivity() {
                                         val encodedPrice = Uri.encode(hotel.price ?: "")
                                         val encodedDesc = Uri.encode(hotel.description ?: "")
                                         val encodedFacilities = Uri.encode(hotel.facilities ?: "")
-                                        // Pastikan URL tujuan benar
+                                        // navigasi ke detail hotel
                                         navController.navigate("hotel_detail/${hotel.id}/${hotel.name}/$encodedAddress/$encodedPrice/$encodedDesc/$encodedFacilities/$encodedUrl")
                                     }
                                 )
                             }
 
-                            // ✅ FIX: TAMBAHKAN ROUTE DETAIL HOTEL DI SINI
+                            // detail hotel
                             composable(
                                 route = "hotel_detail/{id}/{name}/{address}/{price}/{desc}/{facilities}/{url}",
                                 arguments = listOf(
@@ -286,7 +290,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- BOOKING HOTEL ---
+                            // booking hotel
                             composable(
                                 "booking_hotel/{id}/{name}/{price}",
                                 arguments = listOf(
@@ -312,7 +316,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- PAYMENT HOTEL ---
+                            // payment hotel
                             composable(
                                 route = "payment_hotel/{bookingId}/{totalPrice}",
                                 arguments = listOf(
@@ -325,7 +329,6 @@ class MainActivity : ComponentActivity() {
                                 val vm: BookingViewModel = viewModel() // Gunakan VM yang sama untuk update status
                                 val context = LocalContext.current
 
-                                // Gunakan PaymentHotelScreen
                                 PaymentHotelScreen(
                                     bookingId = bookingId,
                                     totalPrice = totalPrice,
@@ -336,6 +339,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            // success booking hotel
                             composable("booking_hotel_success") {
                                 HotelBookingSuccessScreen(
                                     onNavigateHome = {
@@ -346,11 +350,10 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- ORDER HISTORY ---
+                            // booking history
                             composable("booking_list") {
-                                // ✅ FIX: Hapus parameter eventViewModel yang tidak ada
                                 OrderHistoryScreen(
-                                    viewModel = viewModel(), // Cukup ini saja (BookingViewModel)
+                                    viewModel = viewModel(),
                                     onNavigateBack = { navController.popBackStack() },
                                     onNavigateToDetail = { booking ->
                                         val jsonBooking = Uri.encode(Json.encodeToString(booking))
@@ -358,6 +361,8 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+
+                            // detail booking
                             composable(
                                 route = "booking_detail/{jsonBooking}",
                                 arguments = listOf(navArgument("jsonBooking") { type = NavType.StringType })
@@ -374,7 +379,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- TRIPS ---
+                            // trips
                             composable("trips") {
                                 TripScreen(
                                     tripViewModel = tripViewModel,
@@ -383,7 +388,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- REVIEW ---
+                            // review
                             composable(
                                 "review/{id}/{name}",
                                 arguments = listOf(
@@ -403,7 +408,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- EVENTS ---
+                            // events
                             composable("events") {
                                 EventScreen(
                                     viewModel = eventViewModel,
@@ -423,10 +428,12 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            // add event
                             composable("add_event") {
                                 AddEventScreen(onNavigateBack = { navController.popBackStack() })
                             }
 
+                            // edit event
                             composable(
                                 route = "edit_event/{id}/{title}/{desc}/{date}/{url}/{price}",
                                 arguments = listOf(
@@ -456,6 +463,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            // detail event
                             composable(
                                 route = "event_detail/{id}/{title}/{desc}/{date}/{url}/{price}",
                                 arguments = listOf(
@@ -485,6 +493,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            // booking event
                             composable(
                                 route = "booking_event/{id}/{title}/{price}/{date}",
                                 arguments = listOf(
@@ -511,6 +520,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            // payment event
                             composable(
                                 route = "payment_event/{bookingId}/{total}",
                                 arguments = listOf(
@@ -534,7 +544,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // --- FOODS ---
+                            // foods
                             composable("foods") {
                                 FoodScreen(
                                     viewModel = foodViewModel,
